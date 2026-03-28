@@ -489,7 +489,7 @@ namespace Models.CampaignEditor
             wing.PatchSpritePath = wingPatchPathField.value ?? string.Empty;
 
             wing.CountryId = _selectedCountry.ID;
-            wing.Squadrons = BuildSquadronsFromEditor(GetAircraftFromDropdown(),
+            wing.Squadrons = BuildSquadronsFromEditor(wing, GetAircraftFromDropdown(),
                 Mathf.Clamp(aircraftCountField.value, 0, DefaultWingAircraftCount));
 
             // We allow placement at current cursor tile if valid; otherwise leave unchanged
@@ -551,7 +551,11 @@ namespace Models.CampaignEditor
 
         private AircraftData GetWingAircraftType(AirWing wing)
         {
-            return wing?.Squadrons?.FirstOrDefault(s => s?.AircraftType != null)?.AircraftType;
+            var firstSquadron = wing?.Squadrons?.FirstOrDefault(s => s != null);
+            if (firstSquadron == null)
+                return null;
+
+            return firstSquadron.AircraftType ?? ResolveAircraftById(firstSquadron.AircraftTypeId);
         }
 
         private AirSquadron GetEditableSquadron(AirWing wing, int index, string defaultName)
@@ -563,18 +567,30 @@ namespace Models.CampaignEditor
             return new AirSquadron(defaultName, string.Empty, 0, GetDefaultAircraftForCountry());
         }
 
-        private List<AirSquadron> BuildSquadronsFromEditor(AircraftData aircraftType, int totalAircraftCount)
+        private AircraftData ResolveAircraftById(Guid aircraftTypeId)
+        {
+            if (aircraftTypeId == Guid.Empty)
+                return null;
+
+            return CampaignCountries
+                .SelectMany(country => country.AllowedAircraft ?? Enumerable.Empty<AircraftData>())
+                .FirstOrDefault(aircraft => aircraft != null && aircraft.ID == aircraftTypeId);
+        }
+
+        private List<AirSquadron> BuildSquadronsFromEditor(AirWing wing, AircraftData aircraftType, int totalAircraftCount)
         {
             var clampedAircraftCount = Mathf.Clamp(totalAircraftCount, 0, DefaultWingAircraftCount);
             return new List<AirSquadron>
             {
-                BuildSquadronFromEditor(0, "Squadron A", aircraftType, clampedAircraftCount),
-                BuildSquadronFromEditor(1, "Squadron B", aircraftType, clampedAircraftCount)
+                BuildSquadronFromEditor(wing?.Squadrons?.ElementAtOrDefault(0), 0, "Squadron A", aircraftType,
+                    clampedAircraftCount),
+                BuildSquadronFromEditor(wing?.Squadrons?.ElementAtOrDefault(1), 1, "Squadron B", aircraftType,
+                    clampedAircraftCount)
             };
         }
 
-        private AirSquadron BuildSquadronFromEditor(int squadronIndex, string defaultName, AircraftData aircraftType,
-            int totalAircraftCount)
+        private AirSquadron BuildSquadronFromEditor(AirSquadron existingSquadron, int squadronIndex, string defaultName,
+            AircraftData aircraftType, int totalAircraftCount)
         {
             var squadronNameField = squadronIndex == 0 ? sq1NameField : sq2NameField;
             var squadronPatchField = squadronIndex == 0 ? sq1PatchPathField : sq2PatchPathField;
@@ -582,8 +598,20 @@ namespace Models.CampaignEditor
                 ? defaultName
                 : squadronNameField.value.Trim();
 
-            return new AirSquadron(squadronName, squadronPatchField.value ?? string.Empty,
-                GetAircraftCountForSquadron(squadronIndex, totalAircraftCount), aircraftType);
+            var squadron = new AirSquadron(squadronName, squadronPatchField.value ?? string.Empty,
+                GetAircraftCountForSquadron(squadronIndex, totalAircraftCount), aircraftType)
+            {
+                Id = existingSquadron?.Id ?? Guid.NewGuid()
+            };
+
+            if (aircraftType == null)
+            {
+                squadron.AircraftType = existingSquadron?.AircraftType;
+                if (squadron.AircraftType == null)
+                    squadron.AircraftTypeId = existingSquadron?.AircraftTypeId ?? Guid.Empty;
+            }
+
+            return squadron;
         }
 
         private int GetAircraftCountForSquadron(int squadronIndex, int totalAircraftCount)
@@ -664,12 +692,18 @@ namespace Models.CampaignEditor
         {
             var clone = new AirWing
             {
+                Id = src.Id,
                 Name = src.Name,
                 WingType = src.WingType,
                 CountryId = src.CountryId,
                 PatchSpritePath = src.PatchSpritePath,
                 HomeAirfieldCell = src.HomeAirfieldCell,
-                Squadrons = src.Squadrons?.Select(s => new AirSquadron(s.Name, s.PatchSpritePath, s.AircraftCount, s.AircraftType)).ToList()
+                Squadrons = src.Squadrons?.Select(s => new AirSquadron(s.Name, s.PatchSpritePath, s.AircraftCount,
+                    s.AircraftType)
+                {
+                    Id = s.Id,
+                    AircraftTypeId = s.AircraftTypeId
+                }).ToList()
                             ?? new List<AirSquadron>()
             };
             return clone;

@@ -23,6 +23,7 @@ namespace Services
                 return;
             }
 
+            campaign.EnsureAirDataInitialized();
             string json = JsonConvert.SerializeObject(campaign, Settings);
             File.WriteAllText(filePath, json);
 
@@ -33,7 +34,9 @@ namespace Services
             if (File.Exists(fileName))
             {
                 string json = File.ReadAllText(fileName);
-                return JsonConvert.DeserializeObject<Campaign>(json, Settings);
+                var campaign = JsonConvert.DeserializeObject<Campaign>(json, Settings);
+                campaign?.EnsureAirDataInitialized();
+                return campaign;
             }
             return null;
         }
