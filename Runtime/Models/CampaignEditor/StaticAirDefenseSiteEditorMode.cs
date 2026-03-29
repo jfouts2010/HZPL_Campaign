@@ -372,7 +372,7 @@ namespace Models.CampaignEditor
             if (campaign != null)
             {
                 campaign.EnsureAirDataInitialized();
-                visibleSites.AddRange((campaign.Air.StaticAirDefenseSites ?? new List<StaticAirDefenseSiteDefinition>())
+                visibleSites.AddRange((campaign.StaticAirDefenseSites ?? new List<StaticAirDefenseSiteDefinition>())
                     .Where(site => site != null)
                     .OrderBy(site => site.OwnerAlliance)
                     .ThenBy(site => site.Name));
@@ -490,7 +490,7 @@ namespace Models.CampaignEditor
                 return;
 
             campaign.EnsureAirDataInitialized();
-            campaign.Air.StaticAirDefenseSites.RemoveAll(site => site.Id == selectedSite.Id);
+            campaign.StaticAirDefenseSites.RemoveAll(site => site.Id == selectedSite.Id);
             selectedSite = null;
 
             CloseDeletePopup();
@@ -655,16 +655,16 @@ namespace Models.CampaignEditor
 
             if (isEditingExisting)
             {
-                var index = campaign.Air.StaticAirDefenseSites.FindIndex(site => site.Id == editedSite.Id);
+                var index = campaign.StaticAirDefenseSites.FindIndex(site => site.Id == editedSite.Id);
                 if (index >= 0)
-                    campaign.Air.StaticAirDefenseSites[index] = editedSite;
+                    campaign.StaticAirDefenseSites[index] = editedSite;
             }
             else
             {
-                campaign.Air.StaticAirDefenseSites.Add(editedSite);
+                campaign.StaticAirDefenseSites.Add(editedSite);
             }
 
-            selectedSite = campaign.Air.StaticAirDefenseSites.FirstOrDefault(site => site.Id == editedSite.Id);
+            selectedSite = campaign.StaticAirDefenseSites.FirstOrDefault(site => site.Id == editedSite.Id);
             CloseEditorPopup();
             RefreshSitesList();
         }
@@ -701,7 +701,7 @@ namespace Models.CampaignEditor
 
         private StaticAirDefenseSiteDefinition FindSiteAtCell(Vector3Int cellPos)
         {
-            return campaign?.Air?.StaticAirDefenseSites?.FirstOrDefault(site => site != null && site.Tile == cellPos);
+            return campaign?.StaticAirDefenseSites?.FirstOrDefault(site => site != null && site.Tile == cellPos);
         }
 
         private bool IsValidTile(Vector3Int cellPos)
@@ -711,7 +711,7 @@ namespace Models.CampaignEditor
 
         private bool IsOccupiedByOtherSite(Vector3Int cellPos, Guid siteId)
         {
-            return campaign?.Air?.StaticAirDefenseSites?.Any(site =>
+            return campaign?.StaticAirDefenseSites?.Any(site =>
                        site != null && site.Id != siteId && site.Tile == cellPos) == true;
         }
 
