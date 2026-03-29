@@ -45,6 +45,9 @@ namespace Models.CampaignEditor
         private Label statsCombatWidthLabel;
         private Label statsSupplyConsumptionLabel;
         private Label statsFuelConsumptionLabel;
+        private VisualElement mobileAirDefenseSection;
+        private Label mobileAirDefenseSummaryLabel;
+        private Label mobileAirDefenseMissilesLabel;
         private ListView availableBattalionsListView;
         private ListView selectedBattalionsListView;
         private Button editorSaveBtn;
@@ -105,6 +108,9 @@ namespace Models.CampaignEditor
             statsCombatWidthLabel = divisionEditorPopup.Q<Label>("division-stats-combatwidth");
             statsSupplyConsumptionLabel = divisionEditorPopup.Q<Label>("division-stats-supply");
             statsFuelConsumptionLabel = divisionEditorPopup.Q<Label>("division-stats-fuel");
+            mobileAirDefenseSection = divisionEditorPopup.Q<VisualElement>("division-mobile-air-defense-section");
+            mobileAirDefenseSummaryLabel = divisionEditorPopup.Q<Label>("division-mobile-air-defense-summary");
+            mobileAirDefenseMissilesLabel = divisionEditorPopup.Q<Label>("division-mobile-air-defense-missiles");
             availableBattalionsListView = divisionEditorPopup.Q<ListView>("division-available-battalion-listview");
             selectedBattalionsListView = divisionEditorPopup.Q<ListView>("division-selected-battalion-listview");
             editorSaveBtn = divisionEditorPopup.Q<Button>("division-editor-save-btn");
@@ -185,7 +191,8 @@ namespace Models.CampaignEditor
                     var battalionTypes = resolvedTemplate.Composition
                         .Select(c => $"{c.Count}x {c.Battalion.BattalionName}");
                     compositionLabel.text =
-                        $"{division.TotalBattalionCount} Battalions: {string.Join(", ", battalionTypes)}";
+                        $"{division.TotalBattalionCount} Battalions: {string.Join(", ", battalionTypes)}" +
+                        (resolvedTemplate.HasMobileAirDefense ? " | Mobile AD" : string.Empty);
                 }
                 else
                 {
@@ -231,7 +238,7 @@ namespace Models.CampaignEditor
                 var nameLabel = element.Q<Label>();
                 var addBtn = element.Q<Button>();
 
-                nameLabel.text = battalion.BattalionName;
+                nameLabel.text = FormatBattalionName(battalion);
 
                 // Clear old callbacks
                 addBtn.clickable = new Clickable(() => { });
@@ -303,7 +310,7 @@ namespace Models.CampaignEditor
                 var buttons = element.Query<Button>().ToList();
                 var countLabel = element.Query<Label>().ToList()[1]; // Second label is the count
 
-                nameLabel.text = battalion.BattalionName;
+                nameLabel.text = FormatBattalionName(battalion);
                 countLabel.text = tempBattalionComposition[battalion.ID].ToString();
 
                 // Clear old callbacks
@@ -527,7 +534,8 @@ namespace Models.CampaignEditor
                         .Select(kvp => new DivisionTemplate.BattalionComposition(kvp.Key, kvp.Value))
                         .ToList()
                 };
-                var stats = DivisionTemplateResolver.ResolveStats(previewTemplate, ModuleSingleton.Instance.ModuleData);
+                var resolvedTemplate = DivisionTemplateResolver.Resolve(previewTemplate, ModuleSingleton.Instance.ModuleData);
+                var stats = resolvedTemplate.Stats;
 
                 statsStrengthLabel.text = stats.Strength.ToString();
                 statsOrganizationLabel.text = stats.Organization.ToString();
@@ -541,6 +549,7 @@ namespace Models.CampaignEditor
                 statsCombatWidthLabel.text = stats.CombatWidth.ToString("0.##");
                 statsSupplyConsumptionLabel.text = stats.SupplyConsumption.ToString("0.##");
                 statsFuelConsumptionLabel.text = stats.FuelConsumption.ToString("0.##");
+                UpdateMobileAirDefenseUi(resolvedTemplate.MobileAirDefense);
                 return;
             }
 
@@ -556,6 +565,38 @@ namespace Models.CampaignEditor
             statsCombatWidthLabel.text = "0";
             statsSupplyConsumptionLabel.text = "0";
             statsFuelConsumptionLabel.text = "0";
+            UpdateMobileAirDefenseUi(DivisionTemplateMobileAirDefenseStats.Empty);
+        }
+
+        private void UpdateMobileAirDefenseUi(DivisionTemplateMobileAirDefenseStats mobileAirDefense)
+        {
+            if (mobileAirDefenseSection == null || mobileAirDefenseSummaryLabel == null || mobileAirDefenseMissilesLabel == null)
+                return;
+
+            bool hasCapability = mobileAirDefense != null && mobileAirDefense.HasCapability;
+            mobileAirDefenseSection.style.display = hasCapability ? DisplayStyle.Flex : DisplayStyle.None;
+
+            if (!hasCapability)
+            {
+                mobileAirDefenseSummaryLabel.text = string.Empty;
+                mobileAirDefenseMissilesLabel.text = string.Empty;
+                return;
+            }
+
+            mobileAirDefenseSummaryLabel.text =
+                AirDefenseEditorFormatting.FormatMobileAirDefenseSummary(mobileAirDefense);
+            mobileAirDefenseMissilesLabel.text =
+                $"Missiles: {AirDefenseEditorFormatting.FormatGuidQuantityMap(mobileAirDefense.MissileInventoryByWeaponId)}";
+        }
+
+        private static string FormatBattalionName(BattalionData battalion)
+        {
+            if (battalion == null)
+                return string.Empty;
+
+            return battalion.HasSelfPropelledSamCapability
+                ? $"{battalion.BattalionName} [SP SAM]"
+                : battalion.BattalionName;
         }
 
         private void OnEditorSaveClicked()

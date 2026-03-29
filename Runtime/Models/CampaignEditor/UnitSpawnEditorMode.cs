@@ -21,6 +21,7 @@ namespace Models.CampaignEditor
         private Label selectedDivisionLabel;
         private VisualElement divisionPreview;
         private Label divisionDetailsLabel;
+        private Label mobileAirDefenseLabel;
         private Label deployedCountLabel;
 
         private DivisionTemplate selectedTemplate;
@@ -37,12 +38,13 @@ namespace Models.CampaignEditor
 
         private void InitializeUI()
         {
-            // NOTE: UXML still names this "unit-spawn-country-dropdown" — we now use it for Alliance selection.
+            // NOTE: UXML still names this "unit-spawn-country-dropdown" - we now use it for Alliance selection.
             allianceDropdown = _tab.Q<DropdownField>("unit-spawn-country-dropdown");
             divisionTemplatesListView = _tab.Q<ListView>("unit-spawn-divisions-listview");
             selectedDivisionLabel = _tab.Q<Label>("unit-spawn-selected-label");
             divisionPreview = _tab.Q<VisualElement>("unit-spawn-division-preview");
             divisionDetailsLabel = _tab.Q<Label>("unit-spawn-division-details");
+            mobileAirDefenseLabel = _tab.Q<Label>("unit-spawn-mobile-air-defense");
             deployedCountLabel = _tab.Q<Label>("unit-spawn-deployed-count");
 
             allianceDropdown.RegisterValueChangedCallback(evt => OnAllianceChanged(evt.newValue));
@@ -114,7 +116,9 @@ namespace Models.CampaignEditor
                 if (template.Composition != null && template.Composition.Count > 0)
                 {
                     int battalion = template.Composition.Sum(c => c.count);
-                    compositionLabel.text = $"{battalion} Battalions";
+                    var resolvedTemplate = DivisionTemplateResolver.Resolve(template);
+                    compositionLabel.text = $"{battalion} Battalions" +
+                                            (resolvedTemplate.HasMobileAirDefense ? " | Mobile AD" : string.Empty);
                 }
                 else
                 {
@@ -235,6 +239,22 @@ namespace Models.CampaignEditor
                     divisionDetailsLabel.text = "No Battalions assigned";
                 }
 
+                if (resolvedTemplate.HasMobileAirDefense)
+                {
+                    mobileAirDefenseLabel.style.display = DisplayStyle.Flex;
+                    mobileAirDefenseLabel.text =
+                        "Mobile Air Defense:\n" +
+                        AirDefenseEditorFormatting.FormatMobileAirDefenseSummary(resolvedTemplate.MobileAirDefense) +
+                        "\nMissiles: " +
+                        AirDefenseEditorFormatting.FormatGuidQuantityMap(
+                            resolvedTemplate.MobileAirDefense.MissileInventoryByWeaponId);
+                }
+                else
+                {
+                    mobileAirDefenseLabel.style.display = DisplayStyle.None;
+                    mobileAirDefenseLabel.text = string.Empty;
+                }
+
                 int count = Editor.editingCampaign.unitSpawnPoints
                     .Count(p => p.TemplateID == selectedTemplate.ID);
                 deployedCountLabel.text = "Currently deployed: " + count;
@@ -253,6 +273,8 @@ namespace Models.CampaignEditor
                 selectedDivisionLabel.text = "No division selected";
                 selectedDivisionLabel.style.color = new Color(0.7f, 0.7f, 0.7f);
                 divisionDetailsLabel.text = "";
+                mobileAirDefenseLabel.style.display = DisplayStyle.None;
+                mobileAirDefenseLabel.text = "";
                 deployedCountLabel.text = "";
                 divisionPreview.style.backgroundImage = null;
             }

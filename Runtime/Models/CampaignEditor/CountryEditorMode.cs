@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Monobehaviours.Singletons;
 using ScriptableObjects.Gameplay.Units;
+using Services;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -193,9 +194,11 @@ namespace Models.CampaignEditor
                 nameLabel.text = countryData.CountryName;
 
                 int battalionCount = countryData.AllowedBattalions?.Count ?? 0;
+                int mobileAirDefenseBattalionCount = GetSelfPropelledSamBattalionCount(countryData);
                 int divisionCount =
                     Editor?.editingCampaign?.divisionTemplates?.Count(d => d.CountryID == countryData.ID) ?? 0;
-                statsLabel.text = $"Battalions: {battalionCount} | Divisions: {divisionCount}";
+                statsLabel.text =
+                    $"Battalions: {battalionCount} | SP SAM: {mobileAirDefenseBattalionCount} | Divisions: {divisionCount}";
 
                 flag.style.backgroundImage = countryData.FlagSprite != null
                     ? new StyleBackground(countryData.FlagSprite)
@@ -211,16 +214,32 @@ namespace Models.CampaignEditor
             // Battalions list
             countryBattalionsListView.makeItem = () =>
             {
-                var label = new Label
+                var container = new VisualElement
                 {
                     style =
                     {
+                        flexDirection = FlexDirection.Row,
+                        alignItems = Align.Center,
                         paddingLeft = 10,
                         paddingTop = 5,
-                        paddingBottom = 5
+                        paddingBottom = 5,
+                        paddingRight = 10
                     }
                 };
-                return label;
+
+                var nameLabel = new Label { style = { flexGrow = 1 } };
+                var capabilityLabel = new Label
+                {
+                    style =
+                    {
+                        fontSize = 10,
+                        color = new Color(0.6f, 0.85f, 1f)
+                    }
+                };
+
+                container.Add(nameLabel);
+                container.Add(capabilityLabel);
+                return container;
             };
 
             countryBattalionsListView.bindItem = (element, index) =>
@@ -230,10 +249,15 @@ namespace Models.CampaignEditor
                     .Where(p => selectedCampaignCountry.AllowedBattalions.Contains(p.ID)).ToList();
                 if (index < 0 || index >= battalions.Count) return;
 
-                (element as Label).text = battalions[index].BattalionName;
+                var battalion = battalions[index];
+                var nameLabel = element.ElementAt(0) as Label;
+                var capabilityLabel = element.ElementAt(1) as Label;
+
+                nameLabel.text = battalion.BattalionName;
+                capabilityLabel.text = battalion.HasSelfPropelledSamCapability ? "SP SAM" : string.Empty;
             };
 
-            countryBattalionsListView.fixedItemHeight = 30;
+            countryBattalionsListView.fixedItemHeight = 32;
 
             // Divisions list
             countryDivisionsListView.itemsSource = selectedCountryDivisionTemplates;
@@ -273,10 +297,12 @@ namespace Models.CampaignEditor
                 var division = selectedCountryDivisionTemplates[index];
                 var nameLabel = element.ElementAt(0) as Label;
                 var compositionLabel = element.ElementAt(1) as Label;
+                var resolvedTemplate = DivisionTemplateResolver.Resolve(division, ModuleSingleton.Instance.ModuleData);
 
                 nameLabel.text = division.DivisionName;
                 int totalBattalions = division.Composition?.Sum(c => c.count) ?? 0;
-                compositionLabel.text = $"{totalBattalions} Battalions total";
+                compositionLabel.text = $"{totalBattalions} Battalions total" +
+                                        (resolvedTemplate.HasMobileAirDefense ? " | Mobile AD" : string.Empty);
             };
 
             countryDivisionsListView.fixedItemHeight = 45;
@@ -440,6 +466,16 @@ namespace Models.CampaignEditor
         {
             countryDetailPanel.style.display = DisplayStyle.None;
             selectedCountryDivisionTemplates.Clear();
+        }
+
+        private int GetSelfPropelledSamBattalionCount(CountryData countryData)
+        {
+            if (countryData?.AllowedBattalions == null)
+                return 0;
+
+            var battalionIds = new HashSet<Guid>(countryData.AllowedBattalions);
+            return ModuleSingleton.Instance.ModuleData.ModuleBattalions.Count(
+                battalion => battalionIds.Contains(battalion.ID) && battalion.HasSelfPropelledSamCapability);
         }
 
         public override bool PaintTile(Vector3Int cellPos, Vector3Int? lastPaintedCell)

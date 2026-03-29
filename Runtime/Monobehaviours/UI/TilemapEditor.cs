@@ -43,6 +43,7 @@ public class TilemapEditor : MonoBehaviour
     private ReferenceImageEditorMode referenceImageEditorMode;
     private CountryControlEditorMode countryControlEditorMode;
     private AirWingEditorMode airWingEditorMode;
+    private StaticAirDefenseSiteEditorMode staticAirDefenseSiteEditorMode;
     private AllianceEditorMode allianceEditorMode;
     private TestEditorMode testEditorMode;
 
@@ -61,6 +62,7 @@ public class TilemapEditor : MonoBehaviour
     private VisualElement referenceImageTab;
     private VisualElement controlTab;
     private VisualElement airWingTab;
+    private VisualElement airDefenseTab;
     private VisualElement allianceTab;
     private VisualElement testTab;
 
@@ -78,6 +80,7 @@ public class TilemapEditor : MonoBehaviour
     private Button referenceImageBtn;
     private Button controlBtn;
     private Button airWingBtn;
+    private Button airDefenseBtn;
     private Button allianceBtn;
     private Button testBtn;
 
@@ -169,6 +172,7 @@ public class TilemapEditor : MonoBehaviour
         areaTab = root.Q<VisualElement>("area-tab");
         referenceImageTab = root.Q<VisualElement>("reference-image-tab");
         airWingTab = root.Q<VisualElement>("airwing-tab");
+        airDefenseTab = root.Q<VisualElement>("air-defense-tab");
         allianceTab = root.Q<VisualElement>("alliance-tab");
         testTab = root.Q<VisualElement>("test-tab");
 
@@ -189,6 +193,7 @@ public class TilemapEditor : MonoBehaviour
             (referenceImageEditorMode =
                 new ReferenceImageEditorMode(referenceImageTab, this, highlighter, referenceImageController)),
             (airWingEditorMode = new AirWingEditorMode(airWingTab, this, highlighter)),
+            (staticAirDefenseSiteEditorMode = new StaticAirDefenseSiteEditorMode(airDefenseTab, this, highlighter)),
             (allianceEditorMode = new AllianceEditorMode(allianceTab, this, highlighter)),
             (testEditorMode = new TestEditorMode(testTab, this, highlighter))
         };
@@ -206,6 +211,7 @@ public class TilemapEditor : MonoBehaviour
         areaBtn = root.Q<Button>("area-btn");
         referenceImageBtn = root.Q<Button>("reference-image-btn");
         airWingBtn = root.Q<Button>("airwing-btn");
+        airDefenseBtn = root.Q<Button>("air-defense-btn");
         allianceBtn = root.Q<Button>("alliance-btn");
         testBtn = root.Q<Button>("test-btn");
 
@@ -222,6 +228,7 @@ public class TilemapEditor : MonoBehaviour
         areaBtn.clicked += () => SetEditorMode(areaEditorMode);
         referenceImageBtn.clicked += () => SetEditorMode(referenceImageEditorMode);
         airWingBtn.clicked += () => SetEditorMode(airWingEditorMode);
+        airDefenseBtn.clicked += () => SetEditorMode(staticAirDefenseSiteEditorMode);
         allianceBtn.clicked += () => SetEditorMode(allianceEditorMode);
         testBtn.clicked += () => SetEditorMode(testEditorMode);
 
