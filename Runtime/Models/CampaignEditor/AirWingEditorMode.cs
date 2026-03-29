@@ -153,6 +153,7 @@ namespace Models.CampaignEditor
 
         public override void SetCampaign()
         {
+            campaign?.EnsureAirDataInitialized();
             RefreshCountryDropdown();
             RefreshWingsList();
         }
@@ -160,6 +161,7 @@ namespace Models.CampaignEditor
         public override void SetEditorMode()
         {
             base.SetEditorMode();
+            campaign?.EnsureAirDataInitialized();
             RefreshCountryDropdown();
             RefreshWingsList();
             RefreshSelectedWingDisplay();
@@ -186,16 +188,18 @@ namespace Models.CampaignEditor
             if (lastPaintedCell.HasValue && lastPaintedCell.Value == cellPos)
                 return false;
 
-            if (!IsValidAirfieldTile(cellPos))
+            var airport = ResolveAirportAtCell(cellPos);
+            if (airport == null)
                 return false;
 
             if (!TryGetSelectedCountryAlliance(out var selectedAlliance))
                 return false;
 
-            if (_editor.editingCampaign.tileData[cellPos].controllingAlliance != selectedAlliance)
+            if (airport.OwnerAlliance != selectedAlliance)
                 return false;
 
-            selectedWing.HomeAirfieldCell = cellPos;
+            selectedWing.HomeAirportId = airport.Id;
+            selectedWing.HomeAirfieldCell = airport.Tile;
             RefreshSelectedWingDisplay();
             HighlightSelectedWingHome();
 
@@ -211,17 +215,31 @@ namespace Models.CampaignEditor
             pendingPlacementCell = cellPos;
         }
 
-        private bool IsValidAirfieldTile(Vector3Int cell)
+        private AirportDefinition ResolveAirportAtCell(Vector3Int cell)
         {
-            if (campaign == null) return false;
+            if (campaign == null)
+                return null;
 
-            if (campaign.tileData.TryGetValue(cell, out var td))
+            campaign.EnsureAirDataInitialized();
+            return campaign.Airports?.FirstOrDefault(airport => airport != null && airport.Tile == cell);
+        }
+
+        private AirportDefinition ResolveWingHomeAirport(AirWing wing)
+        {
+            if (campaign == null || wing == null)
+                return null;
+
+            campaign.EnsureAirDataInitialized();
+
+            if (wing.HomeAirportId != Guid.Empty)
             {
-                if (td?.infrastructure != null && td.infrastructure.airfieldLevel > 0)
-                    return true;
+                var airportById = campaign.Airports?.FirstOrDefault(airport =>
+                    airport != null && airport.Id == wing.HomeAirportId);
+                if (airportById != null)
+                    return airportById;
             }
 
-            return false;
+            return null;
         }
 
         private bool TryGetSelectedCountryAlliance(out Alliance alliance)
@@ -236,6 +254,20 @@ namespace Models.CampaignEditor
             return true;
         }
 
+        private AirportDefinition GetDefaultAirportForSelectedCountryAlliance()
+        {
+            if (campaign == null || !TryGetSelectedCountryAlliance(out var alliance))
+                return null;
+
+            campaign.EnsureAirDataInitialized();
+            return campaign.Airports?
+                .Where(airport => airport != null && airport.OwnerAlliance == alliance)
+                .OrderBy(airport => airport.Name)
+                .ThenBy(airport => airport.Tile.x)
+                .ThenBy(airport => airport.Tile.y)
+                .FirstOrDefault();
+        }
+
         private void HighlightSelectedWingHome()
         {
             if (selectedWing == null)
@@ -244,7 +276,14 @@ namespace Models.CampaignEditor
                 return;
             }
 
-            highlighter?.HighlightTile(selectedWing.HomeAirfieldCell);
+            var airport = ResolveWingHomeAirport(selectedWing);
+            if (airport == null)
+            {
+                highlighter?.ClearHighlight();
+                return;
+            }
+
+            highlighter?.HighlightTile(airport.Tile);
         }
 
         private void RefreshCountryDropdown()
@@ -325,9 +364,12 @@ namespace Models.CampaignEditor
                 var wing = list[index];
                 var nameLabel = element.ElementAt(0) as Label;
                 var infoLabel = element.ElementAt(1) as Label;
+                var homeAirport = ResolveWingHomeAirport(wing);
 
                 nameLabel.text = wing.Name;
-                infoLabel.text = $"{wing.WingType} • {GetWingAircraftCount(wing)}/{DefaultWingAircraftCount}";
+                infoLabel.text = homeAirport != null
+                    ? $"{wing.WingType} • {homeAirport.Name}"
+                    : $"{wing.WingType} • Unbased";
             };
 
             wingsListView.selectionChanged += OnWingSelectionChanged;
@@ -372,13 +414,16 @@ namespace Models.CampaignEditor
             if (selectedWing == null)
             {
                 selectedWingLabel.text = "No wing selected.";
-                placementHintLabel.text = "Select a wing, then click/drag on an airfield tile (Airfield Level > 0) to set its home base.";
+                placementHintLabel.text = "Select a wing, then click an airport tile to set its home base.";
             }
             else
             {
+                var homeAirport = ResolveWingHomeAirport(selectedWing);
                 selectedWingLabel.text = $"Selected: {selectedWing.Name} ({selectedWing.WingType})";
                 placementHintLabel.text =
-                    $"Home Base Tile: {selectedWing.HomeAirfieldCell}  |  Paint to change (Airfield Level > 0 required).";
+                    homeAirport != null
+                        ? $"Home Airport: {homeAirport.Name} at {homeAirport.Tile} | Click another airport tile to reassign."
+                        : "This wing is currently unbased. Click an airport tile to assign a home base.";
             }
         }
 
@@ -397,9 +442,14 @@ namespace Models.CampaignEditor
             isEditingExisting = false;
             selectedWing = null;
             pendingPlacementCell = Editor.lastPaintedCell;
+            var defaultAirport = GetDefaultAirportForSelectedCountryAlliance();
+            var wing = new AirWing("New Wing", AirWingType.Fighter, _selectedCountry.ID,
+                defaultAirport?.Tile ?? pendingPlacementCell)
+            {
+                HomeAirportId = defaultAirport?.Id ?? Guid.Empty
+            };
 
-            OpenEditorPopupForWing(new AirWing("New Wing", AirWingType.Fighter, _selectedCountry.ID,
-                pendingPlacementCell));
+            OpenEditorPopupForWing(wing);
         }
 
         private void OnEditClicked()
@@ -494,8 +544,13 @@ namespace Models.CampaignEditor
 
             // We allow placement at current cursor tile if valid; otherwise leave unchanged
             var desired = Editor.lastPaintedCell;
-            if (IsValidAirfieldTile(desired))
-                wing.HomeAirfieldCell = desired;
+            var desiredAirport = ResolveAirportAtCell(desired);
+            if (desiredAirport != null && TryGetSelectedCountryAlliance(out var selectedAlliance) &&
+                desiredAirport.OwnerAlliance == selectedAlliance)
+            {
+                wing.HomeAirportId = desiredAirport.Id;
+                wing.HomeAirfieldCell = desiredAirport.Tile;
+            }
 
             if (isEditingExisting)
             {
@@ -697,6 +752,7 @@ namespace Models.CampaignEditor
                 WingType = src.WingType,
                 CountryId = src.CountryId,
                 PatchSpritePath = src.PatchSpritePath,
+                HomeAirportId = src.HomeAirportId,
                 HomeAirfieldCell = src.HomeAirfieldCell,
                 Squadrons = src.Squadrons?.Select(s => new AirSquadron(s.Name, s.PatchSpritePath, s.AircraftCount,
                     s.AircraftType)

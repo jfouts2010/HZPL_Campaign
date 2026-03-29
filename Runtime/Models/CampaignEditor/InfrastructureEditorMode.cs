@@ -28,7 +28,6 @@ namespace Models.CampaignEditor
         // Building controls
         private SliderInt fortificationSlider;
         private SliderInt portSlider;
-        private SliderInt airfieldSlider;
         
         // Resource controls
         private SliderInt oilSlider;
@@ -67,7 +66,6 @@ namespace Models.CampaignEditor
             // Building controls
             fortificationSlider = _tab.Q<SliderInt>("fortification-slider");
             portSlider = _tab.Q<SliderInt>("port-slider");
-            airfieldSlider = _tab.Q<SliderInt>("airfield-slider");
             
             // Resource controls
             oilSlider = _tab.Q<SliderInt>("oil-slider");
@@ -97,7 +95,6 @@ namespace Models.CampaignEditor
             
             fortificationSlider.RegisterValueChangedCallback(evt => OnBuildingLevelChanged(BuildingType.Fortification, evt.newValue));
             portSlider.RegisterValueChangedCallback(evt => OnBuildingLevelChanged(BuildingType.Port, evt.newValue));
-            airfieldSlider.RegisterValueChangedCallback(evt => OnBuildingLevelChanged(BuildingType.Airfield, evt.newValue));
             
             oilSlider.RegisterValueChangedCallback(evt => OnResourceLevelChanged(ResourceType.Oil, evt.newValue));
             electricitySlider.RegisterValueChangedCallback(evt => OnResourceLevelChanged(ResourceType.Electricity, evt.newValue));
@@ -178,7 +175,6 @@ namespace Models.CampaignEditor
                 supplyLineLevelSlider.value = 0;
                 fortificationSlider.value = 0;
                 portSlider.value = 0;
-                airfieldSlider.value = 0;
                 oilSlider.value = 0;
                 electricitySlider.value = 0;
                 steelSlider.value = 0;
@@ -203,7 +199,6 @@ namespace Models.CampaignEditor
             // Buildings
             fortificationSlider.SetValueWithoutNotify(currentInfrastructure.fortificationLevel);
             portSlider.SetValueWithoutNotify(currentInfrastructure.portLevel);
-            airfieldSlider.SetValueWithoutNotify(currentInfrastructure.airfieldLevel);
             
             // Resources
             oilSlider.SetValueWithoutNotify(currentInfrastructure.oilLevel);
@@ -297,8 +292,6 @@ namespace Models.CampaignEditor
                 buildings.Add($"Fortification Lvl {currentInfrastructure.fortificationLevel}");
             if (currentInfrastructure.portLevel > 0)
                 buildings.Add($"Port Lvl {currentInfrastructure.portLevel}");
-            if (currentInfrastructure.airfieldLevel > 0)
-                buildings.Add($"Airfield Lvl {currentInfrastructure.airfieldLevel}");
             
             if (buildings.Count > 0)
             {
