@@ -42,10 +42,10 @@ namespace Models.CampaignEditor
         private Button deleteCancelBtn;
 
         private readonly List<StaticAirDefenseSiteDefinition> visibleSites = new List<StaticAirDefenseSiteDefinition>();
-        private readonly List<StaticAirDefenseSiteComponentData> availableComponents =
-            new List<StaticAirDefenseSiteComponentData>();
-        private readonly List<StaticAirDefenseSiteComponentData> selectedComponents =
-            new List<StaticAirDefenseSiteComponentData>();
+        private readonly List<AirDefenseComponentData> availableComponents =
+            new List<AirDefenseComponentData>();
+        private readonly List<AirDefenseComponentData> selectedComponents =
+            new List<AirDefenseComponentData>();
         private readonly Dictionary<Guid, int> tempComponentComposition = new Dictionary<Guid, int>();
 
         private StaticAirDefenseSiteDefinition selectedSite;
@@ -516,7 +516,7 @@ namespace Models.CampaignEditor
             tileLabel.text = FormatTile(site.Tile);
 
             tempComponentComposition.Clear();
-            foreach (var component in site.Components ?? Enumerable.Empty<StaticAirDefenseSiteDefinition.ComponentComposition>())
+            foreach (var component in site.Components ?? Enumerable.Empty<AirDefenseComponentComposition>())
             {
                 if (component == null || component.Count <= 0)
                     continue;
@@ -541,8 +541,8 @@ namespace Models.CampaignEditor
             availableComponents.Clear();
             selectedComponents.Clear();
 
-            availableComponents.AddRange((ModuleSingleton.Instance.ModuleData?.ModuleAirDefenseSiteComponents ??
-                                          new List<StaticAirDefenseSiteComponentData>())
+            availableComponents.AddRange((ModuleSingleton.Instance.ModuleData?.ModuleAirDefenseComponents ??
+                                          new List<AirDefenseComponentData>())
                 .Where(component => component != null)
                 .OrderBy(component => component.ComponentName));
 
@@ -560,7 +560,7 @@ namespace Models.CampaignEditor
             UpdateResolvedSummary();
         }
 
-        private void OnAddComponentClicked(StaticAirDefenseSiteComponentData component)
+        private void OnAddComponentClicked(AirDefenseComponentData component)
         {
             if (component == null || tempComponentComposition.ContainsKey(component.ID))
                 return;
@@ -569,7 +569,7 @@ namespace Models.CampaignEditor
             RefreshComponentLists();
         }
 
-        private void OnIncrementComponentCount(StaticAirDefenseSiteComponentData component)
+        private void OnIncrementComponentCount(AirDefenseComponentData component)
         {
             if (component == null || !tempComponentComposition.ContainsKey(component.ID))
                 return;
@@ -580,7 +580,7 @@ namespace Models.CampaignEditor
             UpdateResolvedSummary();
         }
 
-        private void OnDecrementComponentCount(StaticAirDefenseSiteComponentData component)
+        private void OnDecrementComponentCount(AirDefenseComponentData component)
         {
             if (component == null || !tempComponentComposition.ContainsKey(component.ID))
                 return;
@@ -597,7 +597,7 @@ namespace Models.CampaignEditor
             UpdateResolvedSummary();
         }
 
-        private void OnRemoveComponentClicked(StaticAirDefenseSiteComponentData component)
+        private void OnRemoveComponentClicked(AirDefenseComponentData component)
         {
             if (component == null)
                 return;
@@ -650,7 +650,7 @@ namespace Models.CampaignEditor
             editedSite.Components = tempComponentComposition
                 .Where(entry => entry.Value > 0)
                 .OrderBy(entry => ResolveComponentName(entry.Key))
-                .Select(entry => new StaticAirDefenseSiteDefinition.ComponentComposition(entry.Key, entry.Value))
+                .Select(entry => new AirDefenseComponentComposition(entry.Key, entry.Value))
                 .ToList();
 
             if (isEditingExisting)
@@ -677,7 +677,7 @@ namespace Models.CampaignEditor
             previewSite.IsKeyIadsNode = keyNodeToggle.value;
             previewSite.Components = tempComponentComposition
                 .Where(entry => entry.Value > 0)
-                .Select(entry => new StaticAirDefenseSiteDefinition.ComponentComposition(entry.Key, entry.Value))
+                .Select(entry => new AirDefenseComponentComposition(entry.Key, entry.Value))
                 .ToList();
             return previewSite;
         }
@@ -691,10 +691,10 @@ namespace Models.CampaignEditor
                 Tile = site.Tile,
                 OwnerAlliance = site.OwnerAlliance,
                 IsKeyIadsNode = site.IsKeyIadsNode,
-                Components = (site.Components ?? new List<StaticAirDefenseSiteDefinition.ComponentComposition>())
+                Components = (site.Components ?? new List<AirDefenseComponentComposition>())
                     .Where(component => component != null)
                     .Select(component =>
-                        new StaticAirDefenseSiteDefinition.ComponentComposition(component.ComponentId, component.Count))
+                        new AirDefenseComponentComposition(component.ComponentId, component.Count))
                     .ToList()
             };
         }
@@ -750,8 +750,8 @@ namespace Models.CampaignEditor
 
         private string ResolveComponentName(Guid componentId)
         {
-            return ModuleSingleton.Instance.ModuleData?.AirDefenseSiteComponentsById != null &&
-                   ModuleSingleton.Instance.ModuleData.AirDefenseSiteComponentsById.TryGetValue(componentId, out var component)
+            return ModuleSingleton.Instance.ModuleData?.AirDefenseComponentsById != null &&
+                   ModuleSingleton.Instance.ModuleData.AirDefenseComponentsById.TryGetValue(componentId, out var component)
                 ? component.ComponentName
                 : componentId.ToString();
         }
