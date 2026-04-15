@@ -575,8 +575,10 @@ namespace Models.CampaignEditor
         {
             if (aircraftTypeDropdown == null) return;
 
-            var choices = _selectedCountry?.AllowedAircraft?.Select(a => a.AircraftName).ToList()
-                         ?? new List<string>();
+            var choices = GetAvailableAircraft()
+                .Select(a => a.AircraftName)
+                .Distinct()
+                .ToList();
 
             if (choices.Count == 0)
                 choices.Add("(No allowed aircraft)");
@@ -588,15 +590,15 @@ namespace Models.CampaignEditor
 
         private AircraftData GetDefaultAircraftForCountry()
         {
-            return _selectedCountry?.AllowedAircraft?.FirstOrDefault();
+            return GetAvailableAircraft().FirstOrDefault();
         }
 
         private AircraftData GetAircraftFromDropdown()
         {
-            if (_selectedCountry?.AllowedAircraft == null) return null;
-            return _selectedCountry.AllowedAircraft
+            var aircraft = GetAvailableAircraft();
+            return aircraft
                 .FirstOrDefault(a => a.AircraftName == aircraftTypeDropdown.value)
-                ?? _selectedCountry.AllowedAircraft.FirstOrDefault();
+                ?? aircraft.FirstOrDefault();
         }
 
         private int GetWingAircraftCount(AirWing wing)
@@ -627,9 +629,16 @@ namespace Models.CampaignEditor
             if (aircraftTypeId == Guid.Empty)
                 return null;
 
-            return CampaignCountries
-                .SelectMany(country => country.AllowedAircraft ?? Enumerable.Empty<AircraftData>())
+            return GetAvailableAircraft()
                 .FirstOrDefault(aircraft => aircraft != null && aircraft.ID == aircraftTypeId);
+        }
+
+        private List<AircraftData> GetAvailableAircraft()
+        {
+            return ModuleSingleton.Instance?.ModuleData?.ModuleAircraft?
+                       .Where(aircraft => aircraft != null)
+                       .ToList()
+                   ?? new List<AircraftData>();
         }
 
         private List<AirSquadron> BuildSquadronsFromEditor(AirWing wing, AircraftData aircraftType, int totalAircraftCount)
