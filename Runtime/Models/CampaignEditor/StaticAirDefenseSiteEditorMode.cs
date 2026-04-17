@@ -42,10 +42,10 @@ namespace Models.CampaignEditor
         private Button deleteCancelBtn;
 
         private readonly List<StaticAirDefenseSiteDefinition> visibleSites = new List<StaticAirDefenseSiteDefinition>();
-        private readonly List<AirDefenseComponentData> availableComponents =
-            new List<AirDefenseComponentData>();
-        private readonly List<AirDefenseComponentData> selectedComponents =
-            new List<AirDefenseComponentData>();
+        private readonly List<AirDefenseComponentDefinition> availableComponents =
+            new List<AirDefenseComponentDefinition>();
+        private readonly List<AirDefenseComponentDefinition> selectedComponents =
+            new List<AirDefenseComponentDefinition>();
         private readonly Dictionary<Guid, int> tempComponentComposition = new Dictionary<Guid, int>();
 
         private StaticAirDefenseSiteDefinition selectedSite;
@@ -263,7 +263,7 @@ namespace Models.CampaignEditor
 
                 nameLabel.text = component.ComponentName;
                 detailLabel.text =
-                    $"{component.ComponentType} | {AirDefenseEditorFormatting.FormatNetworkRoles(component.NetworkRole)}";
+                    $"{component.ComponentType} | {AirDefenseEditorFormatting.FormatNetworkRoles(component.NetworkRoles)}";
 
                 addBtn.clickable = new Clickable(() => { });
                 addBtn.clicked += () => OnAddComponentClicked(component);
@@ -341,7 +341,7 @@ namespace Models.CampaignEditor
 
                 nameLabel.text = component.ComponentName;
                 detailLabel.text =
-                    $"{component.ComponentType} | {AirDefenseEditorFormatting.FormatNetworkRoles(component.NetworkRole)}";
+                    $"{component.ComponentType} | {AirDefenseEditorFormatting.FormatNetworkRoles(component.NetworkRoles)}";
 
                 if (countLabel != null && tempComponentComposition.TryGetValue(component.ID, out var count))
                     countLabel.text = count.ToString();
@@ -542,7 +542,7 @@ namespace Models.CampaignEditor
             selectedComponents.Clear();
 
             availableComponents.AddRange((ModuleSingleton.Instance.ModuleData?.ModuleAirDefenseComponents ??
-                                          new List<AirDefenseComponentData>())
+                                          new List<AirDefenseComponentDefinition>())
                 .Where(component => component != null)
                 .OrderBy(component => component.ComponentName));
 
@@ -560,7 +560,7 @@ namespace Models.CampaignEditor
             UpdateResolvedSummary();
         }
 
-        private void OnAddComponentClicked(AirDefenseComponentData component)
+        private void OnAddComponentClicked(AirDefenseComponentDefinition component)
         {
             if (component == null || tempComponentComposition.ContainsKey(component.ID))
                 return;
@@ -569,7 +569,7 @@ namespace Models.CampaignEditor
             RefreshComponentLists();
         }
 
-        private void OnIncrementComponentCount(AirDefenseComponentData component)
+        private void OnIncrementComponentCount(AirDefenseComponentDefinition component)
         {
             if (component == null || !tempComponentComposition.ContainsKey(component.ID))
                 return;
@@ -580,7 +580,7 @@ namespace Models.CampaignEditor
             UpdateResolvedSummary();
         }
 
-        private void OnDecrementComponentCount(AirDefenseComponentData component)
+        private void OnDecrementComponentCount(AirDefenseComponentDefinition component)
         {
             if (component == null || !tempComponentComposition.ContainsKey(component.ID))
                 return;
@@ -597,7 +597,7 @@ namespace Models.CampaignEditor
             UpdateResolvedSummary();
         }
 
-        private void OnRemoveComponentClicked(AirDefenseComponentData component)
+        private void OnRemoveComponentClicked(AirDefenseComponentDefinition component)
         {
             if (component == null)
                 return;

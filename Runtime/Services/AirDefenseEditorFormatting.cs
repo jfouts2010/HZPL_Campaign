@@ -53,7 +53,7 @@ namespace Models.CampaignEditor
             return
                 $"Contributing battalions: {stats.ContributingBattalionCount}\n" +
                 $"Roles: {FormatNetworkRoles(stats.NetworkRoles)}\n" +
-                $"Launchers: {stats.TotalLauncherCount} | Channels: {stats.TotalChannelCount}\n" +
+                $"Launchers: {stats.TotalLauncherCount} | Channels: {stats.TotalChannelCount} | Launches/slice: {stats.TotalLaunchesPerSlice}\n" +
                 $"Detect / Engage: {stats.BestDetectionRangeKm:0.#} / {stats.BestEngagementRangeKm:0.#} km\n" +
                 $"Network quality: {stats.TotalNetworkQualityContribution:0.#} | Participation range: {stats.MaxNetworkParticipationRangeKm:0.#} km\n" +
                 $"Radar quality: {stats.BestRadarQuality:0.#}";
@@ -67,8 +67,9 @@ namespace Models.CampaignEditor
             return
                 $"Roles: {FormatNetworkRoles(resolved.NetworkRoles)}\n" +
                 $"Base network quality: {resolved.BaseNetworkQuality:0.#}\n" +
+                $"Detect / Engage: {resolved.BestDetectionRangeKm:0.#} / {resolved.BestEngagementRangeKm:0.#} km\n" +
                 $"Participation range: {resolved.NetworkParticipationRangeKm:0.#} km\n" +
-                $"Shooter channels: {resolved.InitialShooterChannels}\n" +
+                $"Shooter channels: {resolved.InitialShooterChannels} | Launches/slice: {resolved.LaunchesPerSlice}\n" +
                 $"Radar profiles: {FormatGuidCollection(resolved.RadarProfileIds)}";
         }
 
