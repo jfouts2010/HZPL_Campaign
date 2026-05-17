@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using Models.Gameplay.Campaign;
+using Models.Module;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -11,6 +12,7 @@ namespace Models.CampaignEditor
 {
     public class TestEditorMode : EditorMode
     {
+        private Button createCampaignBtn;
         private Button generateBtn;
         private TextField outputField;
 
@@ -21,6 +23,7 @@ namespace Models.CampaignEditor
 
         private void WireUI()
         {
+            createCampaignBtn = _tab.Q<Button>("test-create-basic-campaign-btn");
             generateBtn = _tab.Q<Button>("test-generate-boundary-btn");
             outputField = _tab.Q<TextField>("test-boundary-output-field");
 
@@ -29,6 +32,25 @@ namespace Models.CampaignEditor
 
             if (generateBtn != null)
                 generateBtn.clicked += GenerateBoundaryOutput;
+
+            if (createCampaignBtn != null)
+                createCampaignBtn.clicked += CreateBasicCampaign;
+        }
+
+        private void CreateBasicCampaign()
+        {
+            var landmassTile = availableTiles?
+                .FirstOrDefault(tile => tile != null && tile.LandTile) ??
+                availableTiles?.FirstOrDefault(tile => tile != null);
+            var terrain = Editor?.tilemapManager?.terrainTypes?
+                .FirstOrDefault(item => item != null);
+
+            Editor.editingCampaign = TestCampaignFactory.CreateBasicGameplayCampaign(
+                landmassTile?.ID ?? Guid.Empty,
+                terrain?.ID ?? Guid.Empty);
+            Editor.RefreshCampaignView();
+
+            SetOutput("Created basic gameplay test campaign with land divisions, airbases, air wings, and static IADS sites.");
         }
 
         private void GenerateBoundaryOutput()
