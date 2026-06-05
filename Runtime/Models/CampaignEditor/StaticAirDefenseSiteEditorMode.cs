@@ -416,7 +416,7 @@ namespace Models.CampaignEditor
                 return;
             }
 
-            var resolved = StaticAirDefenseSiteResolver.Resolve(selectedSite, ModuleSingleton.Instance.ModuleData);
+            var resolved = StaticAirDefenseSiteResolver.Resolve(selectedSite, ModuleSingleton.Instance.ActiveModule);
             selectedSiteLabel.text =
                 $"Selected: {selectedSite.Name} ({selectedSite.OwnerAlliance}){(selectedSite.IsKeyIadsNode ? " | Key Node" : string.Empty)}";
             selectedSiteSummaryLabel.text =
@@ -541,7 +541,7 @@ namespace Models.CampaignEditor
             availableComponents.Clear();
             selectedComponents.Clear();
 
-            availableComponents.AddRange((ModuleSingleton.Instance.ModuleData?.ModuleAirDefenseComponents ??
+            availableComponents.AddRange((ModuleSingleton.Instance.ActiveModule?.ModuleAirDefenseComponents ??
                                           new List<AirDefenseComponentDefinition>())
                 .Where(component => component != null)
                 .OrderBy(component => component.ComponentName));
@@ -612,7 +612,7 @@ namespace Models.CampaignEditor
                 return;
 
             var previewSite = BuildPreviewSite(baseSite);
-            var resolved = StaticAirDefenseSiteResolver.Resolve(previewSite, ModuleSingleton.Instance.ModuleData);
+            var resolved = StaticAirDefenseSiteResolver.Resolve(previewSite, ModuleSingleton.Instance.ActiveModule);
 
             tileLabel.text = FormatTile(previewSite.Tile);
             resolvedSummaryLabel.text = AirDefenseEditorFormatting.FormatResolvedStaticSiteSummary(resolved);
@@ -750,8 +750,8 @@ namespace Models.CampaignEditor
 
         private string ResolveComponentName(Guid componentId)
         {
-            return ModuleSingleton.Instance.ModuleData?.AirDefenseComponentsById != null &&
-                   ModuleSingleton.Instance.ModuleData.AirDefenseComponentsById.TryGetValue(componentId, out var component)
+            return ModuleSingleton.Instance.ActiveModule?.AirDefenseComponentsById != null &&
+                   ModuleSingleton.Instance.ActiveModule.AirDefenseComponentsById.TryGetValue(componentId, out var component)
                 ? component.ComponentName
                 : componentId.ToString();
         }

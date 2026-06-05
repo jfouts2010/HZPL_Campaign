@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models.Gameplay.Campaign;
@@ -187,7 +187,7 @@ namespace Models.CampaignEditor
 
                 if (division.Composition != null && division.Composition.Count > 0)
                 {
-                    var resolvedTemplate = DivisionTemplateResolver.Resolve(division, ModuleSingleton.Instance.ModuleData);
+                    var resolvedTemplate = DivisionTemplateResolver.Resolve(division, ModuleSingleton.Instance.ActiveModule);
                     var battalionTypes = resolvedTemplate.Composition
                         .Select(c => $"{c.Count}x {c.Battalion.BattalionName}");
                     compositionLabel.text =
@@ -440,7 +440,7 @@ namespace Models.CampaignEditor
 
             // Set up available Battalions from country
             availableBattalionsIDs = _selectedCountry?.AllowedBattalions ?? new List<Guid>();
-            availBattalions = ModuleSingleton.Instance.ModuleData.ModuleBattalions
+            availBattalions = ModuleSingleton.Instance.ActiveModule.ModuleBattalions
                 .Where(p => availableBattalionsIDs.Contains(p.ID)).ToList();
 
             // Load existing composition
@@ -534,7 +534,7 @@ namespace Models.CampaignEditor
                         .Select(kvp => new DivisionTemplate.BattalionComposition(kvp.Key, kvp.Value))
                         .ToList()
                 };
-                var resolvedTemplate = DivisionTemplateResolver.Resolve(previewTemplate, ModuleSingleton.Instance.ModuleData);
+                var resolvedTemplate = DivisionTemplateResolver.Resolve(previewTemplate, ModuleSingleton.Instance.ActiveModule);
                 var stats = resolvedTemplate.Stats;
 
                 statsStrengthLabel.text = stats.Strength.ToString();

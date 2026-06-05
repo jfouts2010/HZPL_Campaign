@@ -1,4 +1,4 @@
-ï»¿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models.Gameplay.Campaign;
@@ -368,8 +368,8 @@ namespace Models.CampaignEditor
 
                 nameLabel.text = wing.Name;
                 infoLabel.text = homeAirport != null
-                    ? $"{wing.WingType} â€¢ {homeAirport.Name}"
-                    : $"{wing.WingType} â€¢ Unbased";
+                    ? $"{wing.WingType} • {homeAirport.Name}"
+                    : $"{wing.WingType} • Unbased";
             };
 
             wingsListView.selectionChanged += OnWingSelectionChanged;
@@ -635,7 +635,7 @@ namespace Models.CampaignEditor
 
         private List<AircraftData> GetAvailableAircraft()
         {
-            return ModuleSingleton.Instance?.ModuleData?.ModuleAircraft?
+            return ModuleSingleton.Instance?.ActiveModule?.ModuleAircraft?
                        .Where(aircraft => aircraft != null)
                        .ToList()
                    ?? new List<AircraftData>();

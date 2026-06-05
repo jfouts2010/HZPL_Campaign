@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Monobehaviours.Singletons;
@@ -31,7 +31,7 @@ namespace Models.CampaignEditor
         private ListView countryDivisionsListView;
 
         private List<CountryData> AllCountryData =>
-            ModuleSingleton.Instance.ModuleData.ModuleCountries?.ToList() ?? new List<CountryData>();
+            ModuleSingleton.Instance.ActiveModule.ModuleCountries?.ToList() ?? new List<CountryData>();
 
         // IMPORTANT: Keep the same list instance for ListView to avoid stale UI bindings.
         private readonly List<CountryData> availableCountryData = new List<CountryData>();
@@ -245,7 +245,7 @@ namespace Models.CampaignEditor
             countryBattalionsListView.bindItem = (element, index) =>
             {
                 if (selectedCampaignCountry?.AllowedBattalions == null) return;
-                var battalions = ModuleSingleton.Instance.ModuleData.ModuleBattalions
+                var battalions = ModuleSingleton.Instance.ActiveModule.ModuleBattalions
                     .Where(p => selectedCampaignCountry.AllowedBattalions.Contains(p.ID)).ToList();
                 if (index < 0 || index >= battalions.Count) return;
 
@@ -297,7 +297,7 @@ namespace Models.CampaignEditor
                 var division = selectedCountryDivisionTemplates[index];
                 var nameLabel = element.ElementAt(0) as Label;
                 var compositionLabel = element.ElementAt(1) as Label;
-                var resolvedTemplate = DivisionTemplateResolver.Resolve(division, ModuleSingleton.Instance.ModuleData);
+                var resolvedTemplate = DivisionTemplateResolver.Resolve(division, ModuleSingleton.Instance.ActiveModule);
 
                 nameLabel.text = division.DivisionName;
                 int totalBattalions = division.Composition?.Sum(c => c.count) ?? 0;
@@ -474,7 +474,7 @@ namespace Models.CampaignEditor
                 return 0;
 
             var battalionIds = new HashSet<Guid>(countryData.AllowedBattalions);
-            return ModuleSingleton.Instance.ModuleData.ModuleBattalions.Count(
+            return ModuleSingleton.Instance.ActiveModule.ModuleBattalions.Count(
                 battalion => battalionIds.Contains(battalion.ID) && battalion.HasSelfPropelledSamCapability);
         }
 
