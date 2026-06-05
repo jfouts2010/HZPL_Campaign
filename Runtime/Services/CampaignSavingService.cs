@@ -7,14 +7,6 @@ namespace Services
 {
     public static class CampaignSavingService
     {
-        private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
-        {
-            Converters = { new Vector3IntDictionaryConverter() },
-            Formatting = Formatting.Indented,
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.Auto
-        };
-        
         public static void SaveCampaign(Campaign campaign, string filePath = null)
         {
             if (campaign == null)
@@ -23,8 +15,15 @@ namespace Services
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                Debug.LogError("Cannot save campaign without a file path.");
+                return;
+            }
+
             campaign.EnsureAirDataInitialized();
-            string json = JsonConvert.SerializeObject(campaign, Settings);
+            CampaignTemplateHashService.ApplyHash(campaign);
+            string json = JsonConvert.SerializeObject(campaign, CampaignTemplateHashService.Settings);
             File.WriteAllText(filePath, json);
 
             Debug.Log($"Campaign saved to: {filePath}");
@@ -34,8 +33,9 @@ namespace Services
             if (File.Exists(fileName))
             {
                 string json = File.ReadAllText(fileName);
-                var campaign = JsonConvert.DeserializeObject<Campaign>(json, Settings);
+                var campaign = JsonConvert.DeserializeObject<Campaign>(json, CampaignTemplateHashService.Settings);
                 campaign?.EnsureAirDataInitialized();
+                campaign?.EnsureTemplateMetadataInitialized();
                 return campaign;
             }
             return null;
