@@ -32,7 +32,7 @@ namespace Services
 
             try
             {
-                var json = JsonConvert.SerializeObject(campaign, CampaignTemplateJsonSettings.Settings);
+                var json = JsonConvert.SerializeObject(campaign, Settings);
                 var token = JToken.Parse(json);
 
                 if (token is JObject root)
