@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -19,6 +20,10 @@ namespace Models.CampaignEditor
         private Button _refreshButton;
         private Button _saveButton;
         private ListView _listView;
+        private TextField _campaignStartTimeField;
+        private IntegerField _simulationTickMinutesField;
+        private IntegerField _operationalCadenceHoursField;
+        private Label _settingsStatusLabel;
 
         // Popup elements
         private VisualElement _popupOverlay;
@@ -59,6 +64,10 @@ namespace Models.CampaignEditor
             _refreshButton = _tab.Q<Button>("refresh-campaign-list-btn");
             _listView = _tab.Q<ListView>("campaign-listview");
             _saveButton = _tab.Q<Button>("save-btn");
+            _campaignStartTimeField = _tab.Q<TextField>("campaign-start-time-field");
+            _simulationTickMinutesField = _tab.Q<IntegerField>("simulation-tick-minutes-field");
+            _operationalCadenceHoursField = _tab.Q<IntegerField>("operational-cadence-hours-field");
+            _settingsStatusLabel = _tab.Q<Label>("campaign-settings-status-label");
             
             // Get popup elements from root
             var root = _tab.panel.visualTree;
@@ -182,6 +191,15 @@ namespace Models.CampaignEditor
                     }
                 });
             }
+
+            if (_campaignStartTimeField != null)
+                _campaignStartTimeField.RegisterValueChangedCallback(_ => ApplySettingsFieldsToCampaign());
+
+            if (_simulationTickMinutesField != null)
+                _simulationTickMinutesField.RegisterValueChangedCallback(_ => ApplySettingsFieldsToCampaign());
+
+            if (_operationalCadenceHoursField != null)
+                _operationalCadenceHoursField.RegisterValueChangedCallback(_ => ApplySettingsFieldsToCampaign());
         }
 
         public override void EraseTile(Vector3Int cellPos, Vector3Int? lastPaintedCell)
@@ -197,7 +215,7 @@ namespace Models.CampaignEditor
 
         public override void SetCampaign()
         {
-            
+            RefreshSettingsFields();
         }
 
         private void RefreshList()
@@ -213,8 +231,12 @@ namespace Models.CampaignEditor
                 _filePaths.Clear();
 
                 var files = Directory.GetFiles(FolderFullPath, "*.json", SearchOption.TopDirectoryOnly);
-                
-                var sortedFiles = files.OrderByDescending(f => File.GetLastWriteTime(f)).ToList();
+                var activeModuleId = ModuleSingleton.Instance.ActiveModule.Id;
+
+                var sortedFiles = files
+                    .Where(file => TemplateMatchesActiveModule(file, activeModuleId))
+                    .OrderByDescending(f => File.GetLastWriteTime(f))
+                    .ToList();
                 _filePaths.AddRange(sortedFiles);
 
                 _listView?.RefreshItems(); 
@@ -222,6 +244,23 @@ namespace Models.CampaignEditor
             catch (Exception e)
             {
                 Debug.LogError($"[CampaignLoad] Failed to refresh list: {e.Message}");
+            }
+        }
+
+        private bool TemplateMatchesActiveModule(string filePath, string activeModuleId)
+        {
+            if (string.IsNullOrWhiteSpace(activeModuleId))
+                return false;
+
+            try
+            {
+                return CampaignSavingService.TryReadCampaignMetadata(filePath, out var metadata) &&
+                       string.Equals(metadata.ModuleId, activeModuleId, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[CampaignLoad] Skipping unreadable campaign '{Path.GetFileName(filePath)}': {e.Message}");
+                return false;
             }
         }
 
@@ -270,10 +309,20 @@ namespace Models.CampaignEditor
                 return;
             }
 
+            if (!TemplateMatchesActiveModule(_pendingLoadPath, ModuleSingleton.Instance.ActiveModule.Id))
+            {
+                Debug.LogError(
+                    $"Cannot load '{Path.GetFileName(_pendingLoadPath)}' because it does not match active module '{ModuleSingleton.Instance.ActiveModule.Id}'.");
+                HideLoadPopup();
+                RefreshList();
+                return;
+            }
+
             Debug.Log($"Loading Campaign: {Path.GetFileName(_pendingLoadPath)}");
             _editor.LoadCampaignFromJson(_pendingLoadPath);
             
             HideLoadPopup();
+            RefreshSettingsFields();
         }
 
         // Save popup methods
@@ -344,6 +393,9 @@ namespace Models.CampaignEditor
                 }
 
                 _editor.editingCampaign.ModuleId = ModuleSingleton.Instance.ActiveModule.Id;
+                if (!ApplySettingsFieldsToCampaign())
+                    return;
+
                 _editor.CaptureReferenceImageIntoCampaign();
                 CampaignSavingService.SaveCampaign(Editor.editingCampaign, fullPath);
                 Debug.Log($"Campaign saved: {campaignName}");
@@ -354,6 +406,88 @@ namespace Models.CampaignEditor
             {
                 Debug.LogError($"Failed to save campaign: {e.Message}");
             }
+        }
+
+        private void RefreshSettingsFields()
+        {
+            var campaign = _editor.editingCampaign;
+            var hasCampaign = campaign != null;
+
+            _campaignStartTimeField?.SetEnabled(hasCampaign);
+            _simulationTickMinutesField?.SetEnabled(hasCampaign);
+            _operationalCadenceHoursField?.SetEnabled(hasCampaign);
+
+            if (!hasCampaign)
+            {
+                if (_settingsStatusLabel != null)
+                    _settingsStatusLabel.text = "Create or load a campaign template to edit settings.";
+                return;
+            }
+
+            campaign.SimulationSettings ??= new SimulationSettings();
+            campaign.SimulationSettings.Normalize();
+
+            _campaignStartTimeField?.SetValueWithoutNotify(campaign.CampaignStartTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture));
+            _simulationTickMinutesField?.SetValueWithoutNotify(campaign.SimulationSettings.SimulationTickMinutes);
+            _operationalCadenceHoursField?.SetValueWithoutNotify(campaign.SimulationSettings.OperationalCadenceHours);
+
+            if (_settingsStatusLabel != null)
+                _settingsStatusLabel.text = "Settings ready.";
+        }
+
+        private bool ApplySettingsFieldsToCampaign()
+        {
+            var campaign = _editor.editingCampaign;
+            if (campaign == null)
+                return true;
+
+            if (_campaignStartTimeField != null)
+            {
+                var rawStart = _campaignStartTimeField.value?.Trim();
+                if (!string.IsNullOrWhiteSpace(rawStart))
+                {
+                    var acceptedFormats = new[]
+                    {
+                        "yyyy-MM-dd HH:mm",
+                        "yyyy-MM-ddTHH:mm",
+                        "yyyy-MM-ddTHH:mm:ss",
+                        "yyyy-MM-dd HH:mm:ss",
+                        "o"
+                    };
+
+                    if (!DateTime.TryParseExact(
+                            rawStart,
+                            acceptedFormats,
+                            CultureInfo.InvariantCulture,
+                            DateTimeStyles.AssumeLocal,
+                            out var parsedStart) &&
+                        !DateTime.TryParse(rawStart, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out parsedStart))
+                    {
+                        if (_settingsStatusLabel != null)
+                            _settingsStatusLabel.text = "Start time must be a valid date/time.";
+                        Debug.LogWarning($"Invalid campaign start time: '{rawStart}'");
+                        return false;
+                    }
+
+                    campaign.CampaignStartTime = parsedStart;
+                }
+            }
+
+            campaign.SimulationSettings ??= new SimulationSettings();
+            if (_simulationTickMinutesField != null)
+                campaign.SimulationSettings.SimulationTickMinutes = _simulationTickMinutesField.value;
+
+            if (_operationalCadenceHoursField != null)
+                campaign.SimulationSettings.OperationalCadenceHours = _operationalCadenceHoursField.value;
+
+            campaign.SimulationSettings.Normalize();
+            _simulationTickMinutesField?.SetValueWithoutNotify(campaign.SimulationSettings.SimulationTickMinutes);
+            _operationalCadenceHoursField?.SetValueWithoutNotify(campaign.SimulationSettings.OperationalCadenceHours);
+
+            if (_settingsStatusLabel != null)
+                _settingsStatusLabel.text = "Settings ready.";
+
+            return true;
         }
     }
 }
