@@ -20,8 +20,7 @@ namespace Services
                 Debug.LogError("Cannot save campaign without a file path.");
                 return;
             }
-
-            campaign.EnsureAirDataInitialized();
+            
             CampaignTemplateHashService.ApplyHash(campaign);
             string json = JsonConvert.SerializeObject(campaign, CampaignTemplateHashService.Settings);
             File.WriteAllText(filePath, json);
@@ -34,8 +33,6 @@ namespace Services
             {
                 string json = File.ReadAllText(fileName);
                 var campaign = JsonConvert.DeserializeObject<Campaign>(json, CampaignTemplateHashService.Settings);
-                campaign?.EnsureAirDataInitialized();
-                campaign?.EnsureTemplateMetadataInitialized();
                 return campaign;
             }
             return null;

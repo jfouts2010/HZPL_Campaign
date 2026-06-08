@@ -98,14 +98,12 @@ namespace Models.CampaignEditor
 
         public override void SetCampaign()
         {
-            campaign?.EnsureAirDataInitialized();
             RefreshAirportsList();
         }
 
         public override void SetEditorMode()
         {
             base.SetEditorMode();
-            campaign?.EnsureAirDataInitialized();
             RefreshAirportsList();
             RefreshSelectedAirportDisplay();
             HighlightSelectedAirport();
@@ -124,8 +122,7 @@ namespace Models.CampaignEditor
 
             if (campaign == null)
                 return false;
-
-            campaign.EnsureAirDataInitialized();
+            
 
             var clickedAirport = FindAirportAtCell(cellPos);
             if (clickedAirport != null && (selectedAirport == null || clickedAirport.Id != selectedAirport.Id))
@@ -212,7 +209,6 @@ namespace Models.CampaignEditor
 
             if (campaign != null)
             {
-                campaign.EnsureAirDataInitialized();
                 visibleAirports.AddRange((campaign.Airports ?? new List<AirportDefinition>())
                     .Where(airport => airport != null)
                     .OrderBy(airport => airport.OwnerAlliance)
@@ -287,8 +283,7 @@ namespace Models.CampaignEditor
         {
             if (campaign == null)
                 return;
-
-            campaign.EnsureAirDataInitialized();
+            
             isEditingExisting = false;
 
             var initialTile = GetAvailablePlacementCell(Guid.NewGuid(), _editor.lastPaintedCell);
@@ -326,8 +321,7 @@ namespace Models.CampaignEditor
         {
             if (campaign == null || selectedAirport == null)
                 return;
-
-            campaign.EnsureAirDataInitialized();
+            
             ClearWingAssignments(selectedAirport.Id);
             campaign.Airports.RemoveAll(airport => airport.Id == selectedAirport.Id);
             selectedAirport = null;
@@ -384,8 +378,6 @@ namespace Models.CampaignEditor
         {
             if (campaign == null || editorPopup.userData is not AirportDefinition editedAirport)
                 return;
-
-            campaign.EnsureAirDataInitialized();
 
             editedAirport.Name = string.IsNullOrWhiteSpace(airportNameField.value)
                 ? "Unnamed Airport"

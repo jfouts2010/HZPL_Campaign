@@ -24,9 +24,6 @@ namespace Services
             if (campaign == null)
                 throw new ArgumentNullException(nameof(campaign));
 
-            campaign.EnsureAirDataInitialized();
-            campaign.EnsureTemplateMetadataInitialized();
-
             var previousHash = campaign.ContentHash;
             campaign.ContentHash = string.Empty;
 

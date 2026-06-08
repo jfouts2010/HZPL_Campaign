@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Monobehaviours.Singletons;
 using Models.Gameplay.Campaign;
 using Services;
 
@@ -279,6 +280,12 @@ namespace Models.CampaignEditor
         private void ShowSavePopup()
         {
             if (_popupOverlay == null || _saveNamePopup == null) return;
+
+            if (_editor.editingCampaign == null)
+            {
+                Debug.LogWarning("Create or load a campaign template before saving.");
+                return;
+            }
             
             // Suggest a default name with timestamp
             var defaultName = $"Campaign_{DateTime.Now:yyyyMMdd_HHmmss}";
@@ -330,6 +337,13 @@ namespace Models.CampaignEditor
             
             try
             {
+                if (_editor.editingCampaign == null)
+                {
+                    Debug.LogWarning("Create or load a campaign template before saving.");
+                    return;
+                }
+
+                _editor.editingCampaign.ModuleId = ModuleSingleton.Instance.ActiveModule.Id;
                 _editor.CaptureReferenceImageIntoCampaign();
                 CampaignSavingService.SaveCampaign(Editor.editingCampaign, fullPath);
                 Debug.Log($"Campaign saved: {campaignName}");

@@ -113,14 +113,12 @@ namespace Models.CampaignEditor
 
         public override void SetCampaign()
         {
-            campaign?.EnsureAirDataInitialized();
             RefreshSitesList();
         }
 
         public override void SetEditorMode()
         {
             base.SetEditorMode();
-            campaign?.EnsureAirDataInitialized();
             RefreshSitesList();
             RefreshSelectedSiteDisplay();
             HighlightSelectedSite();
@@ -139,8 +137,6 @@ namespace Models.CampaignEditor
 
             if (campaign == null)
                 return false;
-
-            campaign.EnsureAirDataInitialized();
 
             var clickedSite = FindSiteAtCell(cellPos);
             if (clickedSite != null && (selectedSite == null || clickedSite.Id != selectedSite.Id))
@@ -371,7 +367,6 @@ namespace Models.CampaignEditor
 
             if (campaign != null)
             {
-                campaign.EnsureAirDataInitialized();
                 visibleSites.AddRange((campaign.StaticAirDefenseSites ?? new List<StaticAirDefenseSiteDefinition>())
                     .Where(site => site != null)
                     .OrderBy(site => site.OwnerAlliance)
@@ -450,7 +445,6 @@ namespace Models.CampaignEditor
             if (campaign == null)
                 return;
 
-            campaign.EnsureAirDataInitialized();
             isEditingExisting = false;
 
             var initialTile = GetAvailablePlacementCell(Guid.NewGuid(), _editor.lastPaintedCell);
@@ -489,7 +483,6 @@ namespace Models.CampaignEditor
             if (campaign == null || selectedSite == null)
                 return;
 
-            campaign.EnsureAirDataInitialized();
             campaign.StaticAirDefenseSites.RemoveAll(site => site.Id == selectedSite.Id);
             selectedSite = null;
 
@@ -638,8 +631,6 @@ namespace Models.CampaignEditor
         {
             if (campaign == null || editorPopup.userData is not StaticAirDefenseSiteDefinition editedSite)
                 return;
-
-            campaign.EnsureAirDataInitialized();
 
             editedSite.Name = string.IsNullOrWhiteSpace(siteNameField.value)
                 ? "Unnamed Static Site"

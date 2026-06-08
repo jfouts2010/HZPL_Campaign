@@ -153,7 +153,6 @@ namespace Models.CampaignEditor
 
         public override void SetCampaign()
         {
-            campaign?.EnsureAirDataInitialized();
             RefreshCountryDropdown();
             RefreshWingsList();
         }
@@ -161,7 +160,6 @@ namespace Models.CampaignEditor
         public override void SetEditorMode()
         {
             base.SetEditorMode();
-            campaign?.EnsureAirDataInitialized();
             RefreshCountryDropdown();
             RefreshWingsList();
             RefreshSelectedWingDisplay();
@@ -219,8 +217,7 @@ namespace Models.CampaignEditor
         {
             if (campaign == null)
                 return null;
-
-            campaign.EnsureAirDataInitialized();
+            
             return campaign.Airports?.FirstOrDefault(airport => airport != null && airport.Tile == cell);
         }
 
@@ -228,8 +225,6 @@ namespace Models.CampaignEditor
         {
             if (campaign == null || wing == null)
                 return null;
-
-            campaign.EnsureAirDataInitialized();
 
             if (wing.HomeAirportId != Guid.Empty)
             {
@@ -259,7 +254,6 @@ namespace Models.CampaignEditor
             if (campaign == null || !TryGetSelectedCountryAlliance(out var alliance))
                 return null;
 
-            campaign.EnsureAirDataInitialized();
             return campaign.Airports?
                 .Where(airport => airport != null && airport.OwnerAlliance == alliance)
                 .OrderBy(airport => airport.Name)
@@ -368,8 +362,8 @@ namespace Models.CampaignEditor
 
                 nameLabel.text = wing.Name;
                 infoLabel.text = homeAirport != null
-                    ? $"{wing.WingType} • {homeAirport.Name}"
-                    : $"{wing.WingType} • Unbased";
+                    ? $"{wing.WingType} ï¿½ {homeAirport.Name}"
+                    : $"{wing.WingType} ï¿½ Unbased";
             };
 
             wingsListView.selectionChanged += OnWingSelectionChanged;

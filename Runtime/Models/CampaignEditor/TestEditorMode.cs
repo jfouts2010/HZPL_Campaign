@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Monobehaviours.Singletons;
 using Models.Gameplay.Campaign;
 using Models.Module;
 using UnityEngine;
@@ -48,6 +49,7 @@ namespace Models.CampaignEditor
             Editor.editingCampaign = TestCampaignFactory.CreateBasicGameplayCampaign(
                 landmassTile?.ID ?? Guid.Empty,
                 terrain?.ID ?? Guid.Empty);
+            Editor.editingCampaign.ModuleId = ModuleSingleton.Instance.ActiveModule.Id;
             Editor.RefreshCampaignView();
 
             SetOutput("Created basic gameplay test campaign with land divisions, airbases, air wings, and static IADS sites.");

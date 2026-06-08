@@ -3,6 +3,7 @@ using UnityEngine.Tilemaps;
 using UnityEngine.UIElements;
 using System.Collections.Generic;
 using System.Linq;
+using Monobehaviours.Singletons;
 using Models.CampaignEditor;
 using Models.Gameplay.Campaign;
 using Models.Gameplay;
@@ -49,6 +50,14 @@ public class TilemapEditor : MonoBehaviour
     private TestEditorMode testEditorMode;
 
     private VisualElement root;
+    private VisualElement modulePickerOverlay;
+    private VisualElement modulePickerList;
+    private Label activeModuleLabel;
+    private Label modulePickerStatusLabel;
+    private Button newTemplateButton;
+    private Button loadTemplateButton;
+    private ModuleDefinition selectedModuleForSession;
+    private bool editorSessionStarted;
 
     [Header("Tabs")] private VisualElement tabHolder;
     private VisualElement landmassTab;
@@ -112,13 +121,12 @@ public class TilemapEditor : MonoBehaviour
         availableLandTiles = tilemapManager.availableLandTiles;
         availableOtherTiles = tilemapManager.availableOtherTiles;
     
-        editingCampaign = new Campaign();
         divisionManager.Initialize(this);
 
         SubscribeToEvents();
         InitializeUI();
         EnsureWorkAreaOutline();
-        SetCampaign();
+        ShowModulePickerGate();
     }
 
     private void OnDestroy()
@@ -160,6 +168,7 @@ public class TilemapEditor : MonoBehaviour
         }
 
         root = uiDocument.rootVisualElement;
+        CacheModuleSessionUi();
 
         // tabs
         tabHolder = root.Q<VisualElement>("tabs");
@@ -239,7 +248,7 @@ public class TilemapEditor : MonoBehaviour
         allianceBtn.clicked += () => SetEditorMode(allianceEditorMode);
         testBtn.clicked += () => SetEditorMode(testEditorMode);
 
-        SetEditorMode(landmassEditorMode);
+        SetEditorMode(campaignLoadEditorMode);
     }
 
     private void SubscribeToEvents()
@@ -262,6 +271,9 @@ public class TilemapEditor : MonoBehaviour
 
     private void LeftClickStarted(InputAction.CallbackContext obj)
     {
+        if (!editorSessionStarted || editingCampaign == null)
+            return;
+
         isLeftMouseDown = true;
         lastPaintedCell = cellPos;
         selectedEditorMode?.PaintTile(lastPaintedCell, null);
@@ -275,6 +287,9 @@ public class TilemapEditor : MonoBehaviour
 
     private void RightClickStarted(InputAction.CallbackContext obj)
     {
+        if (!editorSessionStarted || editingCampaign == null)
+            return;
+
         isRightMouseDown = true;
         lastPaintedCell = cellPos;
         selectedEditorMode?.EraseTile(lastPaintedCell, null);
@@ -294,6 +309,12 @@ public class TilemapEditor : MonoBehaviour
 
     private void SetEditorMode(EditorMode mode)
     {
+        if (mode == null)
+            return;
+
+        if (!editorSessionStarted && mode != campaignLoadEditorMode)
+            return;
+
         selectedEditorMode = mode;
 
         foreach (var editorMode in editorModes)
@@ -325,8 +346,28 @@ public class TilemapEditor : MonoBehaviour
             Debug.LogWarning("Load returned null campaign.");
             return;
         }
+        
+        if (!ModuleSingleton.Instance.TryGetById(loaded.ModuleId, out var loadedModule))
+        {
+            Debug.LogError($"Campaign uses unknown module id '{loaded.ModuleId}'.");
+            return;
+        }
+
+        if (!ModuleSingleton.Instance.HasActiveModuleSelection)
+            ModuleSingleton.Instance.SetActive(loadedModule);
+
+        if (!string.Equals(ModuleSingleton.Instance.ActiveModule.Id, loaded.ModuleId, System.StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.LogError(
+                $"Campaign module '{loaded.ModuleId}' does not match active module '{ModuleSingleton.Instance.ActiveModule.Id}'.");
+            return;
+        }
 
         editingCampaign = loaded;
+        editorSessionStarted = true;
+        SetEditingTabsEnabled(true);
+        RefreshActiveModuleLabel();
+        HideModulePickerGate();
         Debug.Log("Campaign loaded successfully.");
 
         SetCampaign();
@@ -466,7 +507,9 @@ public class TilemapEditor : MonoBehaviour
 
     private void SetCampaign()
     {
-        editingCampaign?.EnsureAirDataInitialized();
+        if (editingCampaign == null)
+            return;
+        
         tilemapManager.SetCampaign(editingCampaign.tileData, editingCampaign.areas, editingCampaign.Airports);
         divisionManager?.Rebuild(editingCampaign);
         foreach (var EM in editorModes)
@@ -475,6 +518,133 @@ public class TilemapEditor : MonoBehaviour
         }
 
         workAreaOutline?.Rebuild(editingCampaign.tileData.Keys);
+        RefreshActiveModuleLabel();
+    }
+
+    private void CacheModuleSessionUi()
+    {
+        activeModuleLabel = root.Q<Label>("active-module-label");
+        modulePickerOverlay = root.Q<VisualElement>("module-picker-overlay");
+        modulePickerList = root.Q<VisualElement>("module-picker-list");
+        modulePickerStatusLabel = root.Q<Label>("module-picker-status-label");
+        newTemplateButton = root.Q<Button>("module-new-template-btn");
+        loadTemplateButton = root.Q<Button>("module-load-template-btn");
+
+        if (activeModuleLabel == null || modulePickerOverlay == null || modulePickerList == null ||
+            modulePickerStatusLabel == null || newTemplateButton == null || loadTemplateButton == null)
+        {
+            Debug.LogError("[TilemapEditor] Missing module picker UI elements in TilemapEditor.uxml.");
+            return;
+        }
+
+        newTemplateButton.clicked += BeginNewTemplateForSelectedModule;
+        newTemplateButton.SetEnabled(false);
+        loadTemplateButton.clicked += BeginLoadTemplateForSelectedModule;
+        loadTemplateButton.SetEnabled(false);
+    }
+
+    private void ShowModulePickerGate()
+    {
+        selectedModuleForSession = null;
+        editorSessionStarted = false;
+        editingCampaign = null;
+        SetEditingTabsEnabled(false);
+        RefreshActiveModuleLabel();
+
+        modulePickerList.Clear();
+        foreach (var module in ModuleSingleton.Instance.GetAll())
+        {
+            var button = new Button(() => SelectModuleForSession(module))
+            {
+                text = $"{module.DisplayName} ({module.Id})"
+            };
+            button.style.marginBottom = 6;
+            modulePickerList.Add(button);
+        }
+
+        modulePickerOverlay.style.display = DisplayStyle.Flex;
+    }
+
+    private void SelectModuleForSession(ModuleDefinition module)
+    {
+        selectedModuleForSession = module;
+        ModuleSingleton.Instance.SetActive(module);
+        modulePickerStatusLabel.text = $"Selected: {module.DisplayName}";
+        newTemplateButton.SetEnabled(true);
+        loadTemplateButton.SetEnabled(true);
+        RefreshActiveModuleLabel();
+    }
+
+    private void BeginNewTemplateForSelectedModule()
+    {
+        if (selectedModuleForSession == null)
+            return;
+
+        ModuleSingleton.Instance.SetActive(selectedModuleForSession);
+        editingCampaign = new Campaign
+        {
+            ModuleId = selectedModuleForSession.Id,
+            CampaignStartTime = Campaign.DefaultCampaignStartTime,
+            SimulationSettings = new SimulationSettings()
+        };
+
+        editorSessionStarted = true;
+        SetEditingTabsEnabled(true);
+        HideModulePickerGate();
+        SetEditorMode(landmassEditorMode);
+        SetCampaign();
+    }
+
+    private void BeginLoadTemplateForSelectedModule()
+    {
+        if (selectedModuleForSession == null)
+            return;
+
+        ModuleSingleton.Instance.SetActive(selectedModuleForSession);
+        editorSessionStarted = false;
+        HideModulePickerGate();
+        SetEditingTabsEnabled(false);
+        if (campaignBtn != null)
+            campaignBtn.SetEnabled(true);
+        SetEditorMode(campaignLoadEditorMode);
+        RefreshActiveModuleLabel();
+    }
+
+    private void HideModulePickerGate()
+    {
+        if (modulePickerOverlay != null)
+            modulePickerOverlay.style.display = DisplayStyle.None;
+    }
+
+    private void SetEditingTabsEnabled(bool enabled)
+    {
+        landBtn?.SetEnabled(enabled);
+        countryBtn?.SetEnabled(enabled);
+        controlBtn?.SetEnabled(enabled);
+        terrainBtn?.SetEnabled(enabled);
+        divisionBtn?.SetEnabled(enabled);
+        unitSpawnBtn?.SetEnabled(enabled);
+        infrastructureBtn?.SetEnabled(enabled);
+        riverBtn?.SetEnabled(enabled);
+        areaBtn?.SetEnabled(enabled);
+        referenceImageBtn?.SetEnabled(enabled);
+        airWingBtn?.SetEnabled(enabled);
+        airportBtn?.SetEnabled(enabled);
+        airDefenseBtn?.SetEnabled(enabled);
+        allianceBtn?.SetEnabled(enabled);
+        testBtn?.SetEnabled(enabled);
+        campaignBtn?.SetEnabled(true);
+    }
+
+    private void RefreshActiveModuleLabel()
+    {
+        if (activeModuleLabel == null)
+            return;
+
+        if (ModuleSingleton.Instance.HasActiveModuleSelection)
+            activeModuleLabel.text = $"Module: {ModuleSingleton.Instance.ActiveModule.DisplayName}";
+        else
+            activeModuleLabel.text = "Module: Select a module";
     }
 
     public void RefreshCampaignView()
