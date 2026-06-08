@@ -42,7 +42,8 @@ namespace Models.CampaignEditor
         // Cached list for division templates shown in the detail panel (stable instance for UI Toolkit).
         private readonly List<DivisionTemplate> selectedCountryDivisionTemplates = new List<DivisionTemplate>();
 
-        private List<CountryData> CampaignCountries => Editor.editingCampaign.CampaignCountries;
+        private List<CountryData> CampaignCountries =>
+            Editor?.editingCampaign?.CampaignCountries ?? new List<CountryData>();
 
         public CountryEditorMode(VisualElement tab, TilemapEditor editor, TileHighlighter _highlighter)
             : base(tab, editor, _highlighter)
@@ -423,7 +424,7 @@ namespace Models.CampaignEditor
             if (Editor.editingCampaign.CountryAlliance != null)
                 Editor.editingCampaign.CountryAlliance.Remove(countryId);
 
-            CampaignCountries.RemoveAll(c => c.ID == countryId);
+            Editor.editingCampaign.Countries?.RemoveAll(id => id == countryId);
 
             RefreshLists();
             selectedCampaignCountry = null;
