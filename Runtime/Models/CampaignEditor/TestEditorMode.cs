@@ -52,14 +52,14 @@ namespace Models.CampaignEditor
             Editor.editingCampaign.ModuleId = ModuleSingleton.Instance.ActiveModule.Id;
             Editor.RefreshCampaignView();
 
-            SetOutput("Created basic gameplay test campaign with land divisions, airbases, air wings, and static IADS sites.");
+            SetOutput("Created basic gameplay test CampaignTemplate with land divisions, airbases, air wings, and static IADS sites.");
         }
 
         private void GenerateBoundaryOutput()
         {
             if (Editor?.editingCampaign?.tileData == null || Editor.editingCampaign.tileData.Count == 0)
             {
-                SetOutput("No campaign tile data.");
+                SetOutput("No CampaignTemplate tile data.");
                 return;
             }
 

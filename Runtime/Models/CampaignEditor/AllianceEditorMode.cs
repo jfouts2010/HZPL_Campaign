@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models.Gameplay.Campaign;
@@ -8,7 +8,7 @@ using UnityEngine.UIElements;
 namespace Models.CampaignEditor
 {
     /// <summary>
-    /// Allows assigning countries in the current editing campaign into BlueFor / RedFor / Neutral alliances.
+    /// Allows assigning countries in the current editing CampaignTemplate into BlueFor / RedFor / Neutral alliances.
     /// Countries always start Neutral and can be moved between columns.
     /// </summary>
     public class AllianceEditorMode : EditorMode
@@ -23,7 +23,7 @@ namespace Models.CampaignEditor
 
         private Label selectionLabel;
 
-        private Campaign currentCampaign => Editor.editingCampaign;
+        private CampaignTemplate currentCampaign => Editor.editingCampaign;
 
         private CountryData _selectedCampaignCountry;
         private Alliance selectedAllianceColumn = Alliance.Neutral;

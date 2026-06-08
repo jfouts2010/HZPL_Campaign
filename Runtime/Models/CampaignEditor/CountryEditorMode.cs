@@ -10,11 +10,11 @@ using UnityEngine.UIElements;
 namespace Models.CampaignEditor
 {
     /// <summary>
-    /// Manages which countries are available in the campaign (from the module's country pool).
+    /// Manages which countries are available in the CampaignTemplate(from the module's country pool).
     ///
     /// Refactor note:
     /// Campaigns no longer hold an instantiated "CampaignCountry" wrapper; they hold plain CountryData
-    /// and reference other campaign data (division templates, spawns, alliances, etc.) by Country ID.
+    /// and reference other CampaignTemplate data (division templates, spawns, alliances, etc.) by Country ID.
     /// </summary>
     public class CountryEditorMode : EditorMode
     {
@@ -453,7 +453,7 @@ namespace Models.CampaignEditor
             countryBattalionsListView.itemsSource = selectedCampaignCountry.AllowedBattalions;
             countryBattalionsListView.Rebuild();
 
-            // Divisions (filter from campaign division templates by CountryID)
+            // Divisions (filter from CampaignTemplate division templates by CountryID)
             selectedCountryDivisionTemplates.Clear();
             var allDivisions = Editor?.editingCampaign?.divisionTemplates;
             if (allDivisions != null)

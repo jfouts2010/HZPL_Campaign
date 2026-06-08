@@ -42,7 +42,7 @@ namespace Models.Gameplay
             ClearRuntimeState();
         }
 
-        public void Rebuild(Models.Gameplay.Campaign.Campaign campaign)
+        public void Rebuild(Models.Gameplay.Campaign.CampaignTemplate campaign)
         {
             ClearRuntimeState();
 
@@ -143,7 +143,7 @@ namespace Models.Gameplay
             _spawnedSprites.Clear();
         }
 
-        private static Alliance ResolveAlliance(Models.Gameplay.Campaign.Campaign campaign, UnitSpawn spawn,
+        private static Alliance ResolveAlliance(Models.Gameplay.Campaign.CampaignTemplate campaign, UnitSpawn spawn,
             DivisionTemplate template)
         {
             if (campaign?.CountryAlliance != null)

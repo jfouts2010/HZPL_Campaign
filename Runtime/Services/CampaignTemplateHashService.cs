@@ -1,13 +1,11 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Models.Gameplay.Campaign;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
-using Models.Gameplay.Campaign;
 using UnityEngine;
 
 namespace Services
@@ -19,7 +17,7 @@ namespace Services
         public const string AlgorithmDescription =
             "SHA-256 of UTF-8 canonical JSON with stable object field ordering, sorted tile dictionary entries, and root ContentHash excluded.";
 
-        public static string ComputeHash(Campaign campaign)
+        public static string ComputeHash(CampaignTemplate campaign)
         {
             if (campaign == null)
                 throw new ArgumentNullException(nameof(campaign));
@@ -33,7 +31,7 @@ namespace Services
                 var token = JToken.Parse(json);
 
                 if (token is JObject root)
-                    root.Remove(nameof(Campaign.ContentHash));
+                    root.Remove(nameof(CampaignTemplate.ContentHash));
 
                 var canonical = Canonicalize(token);
                 var canonicalJson = canonical.ToString(Formatting.None);
@@ -51,7 +49,7 @@ namespace Services
             }
         }
 
-        public static void ApplyHash(Campaign campaign)
+        public static void ApplyHash(CampaignTemplate campaign)
         {
             if (campaign == null)
                 throw new ArgumentNullException(nameof(campaign));
@@ -59,7 +57,7 @@ namespace Services
             campaign.ContentHash = ComputeHash(campaign);
         }
 
-        public static bool IsHashCurrent(Campaign campaign)
+        public static bool IsHashCurrent(CampaignTemplate campaign)
         {
             if (campaign == null || string.IsNullOrWhiteSpace(campaign.ContentHash))
                 return false;
@@ -127,12 +125,12 @@ namespace Services
         {
             return token["key"]?["z"]?.Value<int>() ?? 0;
         }
-        public static bool TryFindByHash(string hash, out string filePath, out Campaign template)
+        public static bool TryFindByHash(string hash, out string filePath, out CampaignTemplate template)
         {
             return TryFindByHash(hash, Path.Combine(Application.persistentDataPath, "Campaigns"), out filePath, out template);
         }
 
-        public static bool TryFindByHash(string hash, string campaignFolderPath, out string filePath, out Campaign template)
+        public static bool TryFindByHash(string hash, string campaignFolderPath, out string filePath, out CampaignTemplate template)
         {
             filePath = null;
             template = null;
@@ -142,7 +140,7 @@ namespace Services
 
             foreach (var candidatePath in Directory.GetFiles(campaignFolderPath, "*.json", SearchOption.TopDirectoryOnly))
             {
-                Campaign candidate;
+                CampaignTemplate candidate;
                 try
                 {
                     candidate = CampaignSavingService.LoadCampaign(candidatePath);

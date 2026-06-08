@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Globalization;
@@ -332,7 +332,7 @@ namespace Models.CampaignEditor
 
             if (_editor.editingCampaign == null)
             {
-                Debug.LogWarning("Create or load a campaign template before saving.");
+                Debug.LogWarning("Create or load a CampaignTemplate template before saving.");
                 return;
             }
             
@@ -367,7 +367,7 @@ namespace Models.CampaignEditor
             
             if (string.IsNullOrEmpty(campaignName))
             {
-                Debug.LogWarning("Campaign name cannot be empty!");
+                Debug.LogWarning("CampaignTemplate name cannot be empty!");
                 return;
             }
             
@@ -388,7 +388,7 @@ namespace Models.CampaignEditor
             {
                 if (_editor.editingCampaign == null)
                 {
-                    Debug.LogWarning("Create or load a campaign template before saving.");
+                    Debug.LogWarning("Create or load a CampaignTemplate template before saving.");
                     return;
                 }
 
@@ -398,7 +398,7 @@ namespace Models.CampaignEditor
 
                 _editor.CaptureReferenceImageIntoCampaign();
                 CampaignSavingService.SaveCampaign(Editor.editingCampaign, fullPath);
-                Debug.Log($"Campaign saved: {campaignName}");
+                Debug.Log($"CampaignTemplate saved: {campaignName}");
                 RefreshList();
                 HideSavePopup();
             }
@@ -420,7 +420,7 @@ namespace Models.CampaignEditor
             if (!hasCampaign)
             {
                 if (_settingsStatusLabel != null)
-                    _settingsStatusLabel.text = "Create or load a campaign template to edit settings.";
+                    _settingsStatusLabel.text = "Create or load a CampaignTemplate template to edit settings.";
                 return;
             }
 
@@ -465,7 +465,7 @@ namespace Models.CampaignEditor
                     {
                         if (_settingsStatusLabel != null)
                             _settingsStatusLabel.text = "Start time must be a valid date/time.";
-                        Debug.LogWarning($"Invalid campaign start time: '{rawStart}'");
+                        Debug.LogWarning($"Invalid CampaignTemplate start time: '{rawStart}'");
                         return false;
                     }
 

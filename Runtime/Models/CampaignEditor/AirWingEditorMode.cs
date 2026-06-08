@@ -14,7 +14,7 @@ namespace Models.CampaignEditor
     ///
     /// Refactor note:
     /// Campaigns no longer store CampaignCountry wrappers. Campaigns store a list of Country IDs and
-    /// other per-country campaign state (alliances, spawns, etc.) keyed by Guid.
+    /// other per-country CampaignTemplate state (alliances, spawns, etc.) keyed by Guid.
     /// </summary>
     public class AirWingEditorMode : EditorMode
     {
@@ -63,9 +63,9 @@ namespace Models.CampaignEditor
         private Button deleteConfirmBtn;
         private Button deleteCancelBtn;
 
-        private Campaign campaign => _editor.editingCampaign;
+        private CampaignTemplate campaign => _editor.editingCampaign;
 
-        // Countries available in the current campaign (resolved from module pool).
+        // Countries available in the current CampaignTemplate(resolved from module pool).
         private List<CountryData> CampaignCountries => Editor.editingCampaign.CampaignCountries;
 
         private CountryData _selectedCountry;

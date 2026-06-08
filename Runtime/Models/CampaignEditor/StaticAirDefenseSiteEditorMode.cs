@@ -51,7 +51,7 @@ namespace Models.CampaignEditor
         private StaticAirDefenseSiteDefinition selectedSite;
         private bool isEditingExisting;
 
-        private Campaign campaign => _editor.editingCampaign;
+        private CampaignTemplate campaign => _editor.editingCampaign;
 
         public StaticAirDefenseSiteEditorMode(VisualElement tab, TilemapEditor editor, TileHighlighter highlighter)
             : base(tab, editor, highlighter)

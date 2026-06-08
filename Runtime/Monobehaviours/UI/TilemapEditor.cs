@@ -15,7 +15,7 @@ using UnityEngine.InputSystem;
 
 public class TilemapEditor : MonoBehaviour
 {
-    public Campaign editingCampaign { get; set; }
+    public CampaignTemplate editingCampaign { get; set; }
 
     public BaseTilemapManager tilemapManager;
     public TileHighlighter highlighter;
@@ -28,7 +28,7 @@ public class TilemapEditor : MonoBehaviour
 
     [Header("UI Document")] public UIDocument uiDocument;
 
-    [Header("Campaign Load Settings")] public string campaignFolderRelative = "Campaigns";
+    [Header("CampaignTemplate Load Settings")] public string campaignFolderRelative = "Campaigns";
 
     [Header("Editor Modes")] private EditorMode selectedEditorMode;
     private List<EditorMode> editorModes;
@@ -328,9 +328,9 @@ public class TilemapEditor : MonoBehaviour
     // Called by CampaignLoadEditorMode when a file is selected.
     public void LoadCampaignFromJson(string fullPath)
     {
-        Debug.Log($"Loading campaign from: {fullPath}");
+        Debug.Log($"Loading CampaignTemplate from: {fullPath}");
 
-        Campaign loaded;
+        CampaignTemplate loaded;
         try
         {
             loaded = CampaignSavingService.LoadCampaign(fullPath); // <-- implement/adjust in your service
@@ -349,7 +349,7 @@ public class TilemapEditor : MonoBehaviour
         
         if (!ModuleSingleton.Instance.TryGetById(loaded.ModuleId, out var loadedModule))
         {
-            Debug.LogError($"Campaign uses unknown module id '{loaded.ModuleId}'.");
+            Debug.LogError($"CampaignTemplate uses unknown module id '{loaded.ModuleId}'.");
             return;
         }
 
@@ -359,7 +359,7 @@ public class TilemapEditor : MonoBehaviour
         if (!string.Equals(ModuleSingleton.Instance.ActiveModule.Id, loaded.ModuleId, System.StringComparison.OrdinalIgnoreCase))
         {
             Debug.LogError(
-                $"Campaign module '{loaded.ModuleId}' does not match active module '{ModuleSingleton.Instance.ActiveModule.Id}'.");
+                $"CampaignTemplate module '{loaded.ModuleId}' does not match active module '{ModuleSingleton.Instance.ActiveModule.Id}'.");
             return;
         }
 
@@ -368,7 +368,7 @@ public class TilemapEditor : MonoBehaviour
         SetEditingTabsEnabled(true);
         RefreshActiveModuleLabel();
         HideModulePickerGate();
-        Debug.Log("Campaign loaded successfully.");
+        Debug.Log("CampaignTemplate loaded successfully.");
 
         SetCampaign();
         ApplyReferenceImageFromCampaign();
@@ -581,10 +581,10 @@ public class TilemapEditor : MonoBehaviour
             return;
 
         ModuleSingleton.Instance.SetActive(selectedModuleForSession);
-        editingCampaign = new Campaign
+        editingCampaign = new CampaignTemplate
         {
             ModuleId = selectedModuleForSession.Id,
-            CampaignStartTime = Campaign.DefaultCampaignStartTime,
+            CampaignStartTime = CampaignTemplate.DefaultCampaignStartTime,
             SimulationSettings = new SimulationSettings()
         };
 

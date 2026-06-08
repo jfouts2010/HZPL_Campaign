@@ -39,7 +39,7 @@ namespace Models.CampaignEditor
         private AirportDefinition selectedAirport;
         private bool isEditingExisting;
 
-        private Campaign campaign => _editor.editingCampaign;
+        private CampaignTemplate campaign => _editor.editingCampaign;
 
         public AirportEditorMode(VisualElement tab, TilemapEditor editor, TileHighlighter highlighter)
             : base(tab, editor, highlighter)

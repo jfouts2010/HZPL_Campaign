@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Models.Gameplay
 {
     /// <summary>
-    /// Draws a world-space outline around the currently editable campaign tile area.
+    /// Draws a world-space outline around the currently editable CampaignTemplate tile area.
     /// </summary>
     public class MapWorkAreaOutlineController : MonoBehaviour
     {

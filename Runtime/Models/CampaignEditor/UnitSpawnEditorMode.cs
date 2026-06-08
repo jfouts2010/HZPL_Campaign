@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models.Gameplay.Campaign;
@@ -125,7 +125,7 @@ namespace Models.CampaignEditor
                     compositionLabel.text = "Empty division";
                 }
 
-                // Count deployed divisions using this template (TODO: hook up if/when deployedDivisions exists in campaign editor data)
+                // Count deployed divisions using this template (TODO: hook up if/when deployedDivisions exists in CampaignTemplate editor data)
                 deployedLabel.text = "Deployed: 0";
             };
 
@@ -145,7 +145,7 @@ namespace Models.CampaignEditor
                 return;
             }
 
-            // Only show alliances that exist in the campaign mapping.
+            // Only show alliances that exist in the CampaignTemplate mapping.
             var alliances = campaign.CountryAlliance
                 .Where(kv => campaign.Countries.Contains(kv.Key))
                 .Select(kv => kv.Value)
@@ -195,7 +195,7 @@ namespace Models.CampaignEditor
             var allianceCountries = campaign.GetAllianceData(_selectedAlliance);
             var allianceCountryIds = new HashSet<Guid>(allianceCountries.Select(c => c.ID));
 
-            // Templates are stored globally on campaign and are keyed by CountryID.
+            // Templates are stored globally on CampaignTemplate and are keyed by CountryID.
             availableTemplates = (campaign.divisionTemplates ?? new List<DivisionTemplate>())
                 .Where(t => t != null && allianceCountryIds.Contains(t.CountryID))
                 .OrderBy(t => allianceCountries.FirstOrDefault(c => c.ID == t.CountryID)?.CountryName ?? string.Empty)
