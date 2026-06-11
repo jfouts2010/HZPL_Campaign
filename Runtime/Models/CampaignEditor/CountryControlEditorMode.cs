@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models.Gameplay.Campaign;
@@ -142,16 +142,13 @@ namespace Models.CampaignEditor
             if (Editor.editingCampaign == null)
                 return false;
 
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos))
-                Editor.editingCampaign.tileData[cellPos] = new HZPLTileData();
-
-            var tile = Editor.editingCampaign.tileData[cellPos];
+            var templateTile = Editor.editingCampaign.EnsureTemplateTile(cellPos);
 
             // Only allow painting land tiles
-            if (!tile.LandTile)
+            if (!templateTile.LandTile)
                 return false;
 
-            tile.controllingAlliance = _selectedAlliance;
+            Editor.editingCampaign.EnsureStartingTile(cellPos).startingAlliance = _selectedAlliance;
             Editor.tilemapManager.UpdateTile(cellPos);
             ShowValidation();
             return true;
@@ -161,14 +158,13 @@ namespace Models.CampaignEditor
         {
             if (Editor.editingCampaign == null) return;
 
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos))
+            if (!Editor.editingCampaign.TryGetTemplateTile(cellPos, out var templateTile))
                 return;
 
-            var tile = Editor.editingCampaign.tileData[cellPos];
-            if (!tile.LandTile)
+            if (!templateTile.LandTile)
                 return;
 
-            tile.controllingAlliance = Alliance.Neutral;
+            Editor.editingCampaign.EnsureStartingTile(cellPos).startingAlliance = Alliance.Neutral;
             Editor.tilemapManager.UpdateTile(cellPos);
             ShowValidation();
         }
@@ -185,12 +181,15 @@ namespace Models.CampaignEditor
             int totalLand = 0;
             int unassigned = 0;
 
-            foreach (var kvp in Editor.editingCampaign.tileData)
+            foreach (var cell in Editor.editingCampaign.TileCells)
             {
-                var td = kvp.Value;
-                if (!td.LandTile) continue;
+                if (!Editor.editingCampaign.TryGetTemplateTile(cell, out var templateTile) ||
+                    !templateTile.LandTile)
+                    continue;
+
+                Editor.editingCampaign.TryGetStartingTile(cell, out var startingTile);
                 totalLand++;
-                if (td.controllingAlliance == Alliance.Neutral) unassigned++;
+                if ((startingTile?.startingAlliance ?? Alliance.Neutral) == Alliance.Neutral) unassigned++;
             }
 
             if (totalLand == 0)
@@ -200,12 +199,12 @@ namespace Models.CampaignEditor
             }
             else if (unassigned == 0)
             {
-                validationLabel.text = "✅ All land tiles assigned to an alliance.";
+                validationLabel.text = "? All land tiles assigned to an alliance.";
                 validationLabel.style.color = new StyleColor(Color.green);
             }
             else
             {
-                validationLabel.text = $"⚠ {unassigned} / {totalLand} land tiles unassigned.";
+                validationLabel.text = $"? {unassigned} / {totalLand} land tiles unassigned.";
                 validationLabel.style.color = new StyleColor(Color.red);
             }
         }

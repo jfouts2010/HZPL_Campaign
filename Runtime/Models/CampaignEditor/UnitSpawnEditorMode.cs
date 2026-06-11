@@ -292,7 +292,8 @@ namespace Models.CampaignEditor
                 return false;
             }
 
-            if (Editor.editingCampaign.tileData[cellPos].controllingAlliance != _selectedAlliance)
+            if (!Editor.editingCampaign.TryGetStartingTile(cellPos, out var startingTile) ||
+                startingTile.startingAlliance != _selectedAlliance)
             {
                 Debug.LogWarning("Can Only spawn Divisions on tiles you control");
                 return false;

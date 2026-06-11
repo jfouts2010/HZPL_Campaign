@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Models.Gameplay.Campaign;
 using UnityEngine;
@@ -116,18 +116,19 @@ namespace Models.CampaignEditor
 
         public override void EraseTile(Vector3Int cellPos, Vector3Int? lastPaintedCell)
         {
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos)) return;
+            if (!Editor.editingCampaign.HasTile(cellPos)) return;
             if (lastPaintedCell.HasValue && cellPos.Equals(lastPaintedCell.Value))
                 return;
             // Clear infrastructure on this tile
-            var tileData = Editor.editingCampaign.tileData[cellPos];
+            var templateTile = Editor.editingCampaign.EnsureTemplateTile(cellPos);
+            var startingTile = Editor.editingCampaign.EnsureStartingTile(cellPos);
 
             // Tile name
             if (tileNameField != null)
-                tileNameField.SetValueWithoutNotify(tileData.tileName ?? string.Empty);
-            if (tileData.infrastructure != null)
+                tileNameField.SetValueWithoutNotify(templateTile.tileName ?? string.Empty);
+            if (startingTile.infrastructure != null)
             {
-                tileData.infrastructure.Clear();
+                startingTile.infrastructure.Clear();
                 Debug.Log($"Cleared all infrastructure at {cellPos}");
                 
                 // If this is the current tile, update display
@@ -143,22 +144,22 @@ namespace Models.CampaignEditor
         {
             currentTile = cellPos;
             
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos))
+            if (!Editor.editingCampaign.HasTile(cellPos))
             {
                 currentInfrastructure = null;
                 UpdateDisplay();
                 return;
             }
             
-            var tileData = Editor.editingCampaign.tileData[cellPos];
+            var startingTile = Editor.editingCampaign.EnsureStartingTile(cellPos);
             
             // Ensure infrastructure exists
-            if (tileData.infrastructure == null)
+            if (startingTile.infrastructure == null)
             {
-                tileData.infrastructure = new TileInfrastructure();
+                startingTile.infrastructure = new TileInfrastructure();
             }
             
-            currentInfrastructure = tileData.infrastructure;
+            currentInfrastructure = startingTile.infrastructure;
             
             // Update UI to reflect current values (without triggering callbacks)
             UpdateUIFromInfrastructure();
@@ -208,8 +209,8 @@ namespace Models.CampaignEditor
 
             if (currentTile.HasValue)
             {
-                var tileData = Editor.editingCampaign.tileData[currentTile.Value];
-                tileNameField.SetValueWithoutNotify(tileData.tileName ?? string.Empty);   
+                var tileData = Editor.editingCampaign.EnsureTemplateTile(currentTile.Value);
+                tileNameField.SetValueWithoutNotify(tileData.tileName ?? string.Empty);
             }
             else
             {
@@ -329,9 +330,9 @@ namespace Models.CampaignEditor
         private void OnTileNameChanged(string newName)
         {
             if (currentTile == null) return;
-            if (!Editor.editingCampaign.tileData.ContainsKey(currentTile.Value)) return;
+            if (!Editor.editingCampaign.HasTile(currentTile.Value)) return;
             
-            var tileData = Editor.editingCampaign.tileData[currentTile.Value];
+            var tileData = Editor.editingCampaign.EnsureTemplateTile(currentTile.Value);
             tileData.tileName = string.IsNullOrWhiteSpace(newName) ? string.Empty : newName.Trim();
             
             OnDataChanged();

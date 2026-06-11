@@ -29,7 +29,7 @@ namespace Models.CampaignEditor
                 return false; // Exit early if we are clicking UI
             }
 
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos))
+            if (!Editor.editingCampaign.HasTile(cellPos))
             {
                 return false; //no info for tile
             }

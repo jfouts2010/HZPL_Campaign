@@ -136,10 +136,10 @@ namespace Models.CampaignEditor
             if (Editor.editingCampaign == null || selectedArea == null) return false;
 
             // Ensure tile exists
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos)) return false;
+            if (!Editor.editingCampaign.HasTile(cellPos)) return false;
 
             // Enforce land/water rules:
-            var tile = Editor.editingCampaign.tileData[cellPos];
+            var tile = Editor.editingCampaign.EnsureTemplateTile(cellPos);
             var requiredLand = selectedArea.Type == AreaType.Land;
             if (requiredLand != tile.LandTile)
             {
@@ -161,10 +161,10 @@ namespace Models.CampaignEditor
         public override void EraseTile(Vector3Int cellPos, Vector3Int? lastPaintedCell)
         {
             if (Editor.editingCampaign == null) return;
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos)) return;
+            if (!Editor.editingCampaign.HasTile(cellPos)) return;
             if (lastPaintedCell.HasValue && cellPos.Equals(lastPaintedCell.Value))
                 return;
-            var tile = Editor.editingCampaign.tileData[cellPos];
+            var tile = Editor.editingCampaign.EnsureTemplateTile(cellPos);
             tile.areaId = Guid.Empty;
             Editor.tilemapManager.UpdateTile(cellPos);
 
@@ -239,10 +239,11 @@ namespace Models.CampaignEditor
             if (Editor.editingCampaign == null || selectedArea == null) return;
 
             // Remove all tile refs
-            foreach (var kvp in Editor.editingCampaign.tileData)
+            foreach (var cell in Editor.editingCampaign.TileCells)
             {
-                if (kvp.Value.areaId == selectedArea.Id)
-                    kvp.Value.areaId = Guid.Empty;
+                var tile = Editor.editingCampaign.EnsureTemplateTile(cell);
+                if (tile.areaId == selectedArea.Id)
+                    tile.areaId = Guid.Empty;
             }
 
             Editor.editingCampaign.areas.Remove(selectedArea);
@@ -258,7 +259,7 @@ namespace Models.CampaignEditor
         {
             if (Editor.editingCampaign == null || validationLabel == null) return;
 
-            int missing = Editor.editingCampaign.tileData.Values.Count(t => t.areaId == Guid.Empty);
+            int missing = Editor.editingCampaign.templateTiles.Values.Count(t => t.areaId == Guid.Empty);
             if (missing == 0)
             {
                 validationLabel.text = "✅ All tiles are assigned to an area.";
@@ -273,7 +274,7 @@ namespace Models.CampaignEditor
         {
             if (Editor.editingCampaign == null) return true;
 
-            foreach (var kvp in Editor.editingCampaign.tileData)
+            foreach (var kvp in Editor.editingCampaign.templateTiles)
             {
                 if (kvp.Value.areaId != area.Id) continue;
 

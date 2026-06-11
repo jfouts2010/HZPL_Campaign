@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Models.Gameplay.Campaign;
@@ -64,7 +64,7 @@ namespace Models.CampaignEditor
             if (lastPaintedCell.HasValue && cellPos.Equals(lastPaintedCell.Value))
                 return false;
             // Set the terrain type for this tile
-            Editor.editingCampaign.tileData[cellPos].terrainID = selectedTerrain.ID;
+            Editor.editingCampaign.EnsureTemplateTile(cellPos).terrainID = selectedTerrain.ID;
             Editor.tilemapManager.UpdateTile(cellPos);
             return true;
         }
@@ -73,9 +73,9 @@ namespace Models.CampaignEditor
         {
             if (lastPaintedCell.HasValue && cellPos.Equals(lastPaintedCell.Value))
                 return;
-            if (Editor.editingCampaign.tileData.ContainsKey(cellPos))
+            if (Editor.editingCampaign.HasTile(cellPos))
             {
-                Editor.editingCampaign.tileData[cellPos].terrainID = Guid.Empty;
+                Editor.editingCampaign.EnsureTemplateTile(cellPos).terrainID = Guid.Empty;
                 Editor.tilemapManager.UpdateTile(cellPos);
             }
         }

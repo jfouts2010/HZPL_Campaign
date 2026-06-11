@@ -54,7 +54,7 @@ namespace Models.CampaignEditor
             lastPaintedEdge = null;
             needsRebuild = false;
 
-            Editor.tilemapManager.riverOverlay?.RebuildAll(Editor.editingCampaign.tileData);
+            Editor.tilemapManager.riverOverlay?.RebuildAll(Editor.editingCampaign.BuildGameplayTileView());
             UpdateInfo(null);
         }
 
@@ -65,7 +65,7 @@ namespace Models.CampaignEditor
             lastPaintedEdge = null;
             needsRebuild = false;
 
-            Editor.tilemapManager.riverOverlay?.RebuildAll(Editor.editingCampaign.tileData);
+            Editor.tilemapManager.riverOverlay?.RebuildAll(Editor.editingCampaign.BuildGameplayTileView());
             UpdateInfo(null);
         }
 
@@ -95,7 +95,7 @@ namespace Models.CampaignEditor
                 return;
             }
 
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos))
+            if (!Editor.editingCampaign.HasTile(cellPos))
             {
                 Editor.tilemapManager.riverOverlay?.ShowHover(Vector3Int.zero, Vector3Int.zero, false);
                 return;
@@ -119,7 +119,7 @@ namespace Models.CampaignEditor
                 {
                     rebuildTimer = 0f;
                     needsRebuild = false;
-                    Editor.tilemapManager.riverOverlay.RebuildAll(Editor.editingCampaign.tileData);
+                    Editor.tilemapManager.riverOverlay.RebuildAll(Editor.editingCampaign.BuildGameplayTileView());
                 }
             }
         }
@@ -127,7 +127,7 @@ namespace Models.CampaignEditor
         public override bool PaintTile(Vector3Int cellPos, Vector3Int? lastPaintedCell)
         {
             if (!base.PaintTile(cellPos, lastPaintedCell)) return false;
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos))
+            if (!Editor.editingCampaign.HasTile(cellPos))
                 return false;
 
             var edge = GetClosestEdgeKey(cellPos);
@@ -147,7 +147,7 @@ namespace Models.CampaignEditor
 
         public override void EraseTile(Vector3Int cellPos, Vector3Int? lastPaintedCell)
         {
-            if (!Editor.editingCampaign.tileData.ContainsKey(cellPos))
+            if (!Editor.editingCampaign.HasTile(cellPos))
                 return;
 
             var edge = GetClosestEdgeKey(cellPos);
@@ -162,13 +162,13 @@ namespace Models.CampaignEditor
 
         private bool ApplyRiver(RiverEdgeKey edge, bool value)
         {
-            if (!Editor.editingCampaign.tileData.ContainsKey(edge.a))
+            if (!Editor.editingCampaign.HasTile(edge.a))
                 return false;
-            if (!Editor.editingCampaign.tileData.ContainsKey(edge.b))
+            if (!Editor.editingCampaign.HasTile(edge.b))
                 return false;
 
-            var aData = Editor.editingCampaign.tileData[edge.a];
-            var bData = Editor.editingCampaign.tileData[edge.b];
+            var aData = Editor.editingCampaign.EnsureTemplateTile(edge.a);
+            var bData = Editor.editingCampaign.EnsureTemplateTile(edge.b);
 
             aData.SetRiver(edge.dirFromA, value);
             bData.SetRiver(edge.dirFromB, value);
@@ -183,12 +183,12 @@ namespace Models.CampaignEditor
 
         private void ClearAllRivers()
         {
-            foreach (var kvp in Editor.editingCampaign.tileData)
+            foreach (var cell in Editor.editingCampaign.TileCells)
             {
-                kvp.Value.ClearRivers();
-                Editor.tilemapManager.UpdateTile(kvp.Key);
+                Editor.editingCampaign.EnsureTemplateTile(cell).ClearRivers();
+                Editor.tilemapManager.UpdateTile(cell);
             }
-            Editor.tilemapManager.riverOverlay?.RebuildAll(Editor.editingCampaign.tileData);
+            Editor.tilemapManager.riverOverlay?.RebuildAll(Editor.editingCampaign.BuildGameplayTileView());
 
             lastPaintedEdge = null;
             needsRebuild = false;
@@ -208,7 +208,7 @@ namespace Models.CampaignEditor
                 return;
             }
 
-            bool hasRiver = Editor.editingCampaign.tileData[edge.Value.a].HasRiver(edge.Value.dirFromA);
+            bool hasRiver = Editor.editingCampaign.EnsureTemplateTile(edge.Value.a).HasRiver(edge.Value.dirFromA);
             selectedInfoLabel.text = $"Edge: {edge.Value.a} ↔ {edge.Value.b}   River: {(hasRiver ? "Yes" : "No")}";
         }
 
@@ -229,7 +229,7 @@ namespace Models.CampaignEditor
             HexDirection dir = SectorToDirection(sector);
             Vector3Int neighbor = GetNeighbor(cellPos, dir);
 
-            if (!Editor.editingCampaign.tileData.ContainsKey(neighbor))
+            if (!Editor.editingCampaign.HasTile(neighbor))
                 return null;
 
             var a = cellPos;

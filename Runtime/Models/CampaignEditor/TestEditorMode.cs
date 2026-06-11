@@ -57,17 +57,19 @@ namespace Models.CampaignEditor
 
         private void GenerateBoundaryOutput()
         {
-            if (Editor?.editingCampaign?.tileData == null || Editor.editingCampaign.tileData.Count == 0)
+            if (Editor?.editingCampaign == null || Editor.editingCampaign.TileCount == 0)
             {
                 SetOutput("No CampaignTemplate tile data.");
                 return;
             }
 
-            var tiles = Editor.editingCampaign.tileData;
+            var tiles = Editor.editingCampaign.BuildGameplayTileView();
             GetTileBounds(tiles.Keys, out int minX, out int maxX, out int minY, out int maxY);
 
             var missionBottomLeft = Editor.editingCampaign.BottomLeftCorner;
-            var missionTopRight = Editor.editingCampaign.TopRightCorner;
+            var missionTopRight = Editor.editingCampaign.TryGetInclusiveTopRightCorner(out var inclusiveTopRight)
+                ? inclusiveTopRight
+                : Editor.editingCampaign.TopRightCorner;
 
             var redPolygons = BuildPolygons(Alliance.RedFor, tiles, minX, maxX, minY, maxY, missionBottomLeft, missionTopRight);
             var bluePolygons = BuildPolygons(Alliance.BlueFor, tiles, minX, maxX, minY, maxY, missionBottomLeft, missionTopRight);
@@ -77,7 +79,7 @@ namespace Models.CampaignEditor
 
         private static List<List<Vector2>> BuildPolygons(
             Alliance alliance,
-            Dictionary<Vector3Int, HZPLTileData> tiles,
+            Dictionary<Vector3Int, GameplayTile> tiles,
             int minX,
             int maxX,
             int minY,

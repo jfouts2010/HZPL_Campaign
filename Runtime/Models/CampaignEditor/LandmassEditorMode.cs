@@ -170,7 +170,7 @@ namespace Models.CampaignEditor
                 return false;
 
             HZPLTile selectedTile = availableTiles[selectedTileIndex];
-            var tileData = Editor.editingCampaign.tileData[cellPos];
+            var tileData = Editor.editingCampaign.EnsureTemplateTile(cellPos);
             if (tileData.terrainID == Guid.Empty)
             {
                 tileData.terrainID = Editor.tilemapManager.terrainTypes.First().ID;
@@ -185,7 +185,7 @@ namespace Models.CampaignEditor
         {
             if (lastPaintedCell.HasValue && cellPos.Equals(lastPaintedCell.Value))
                 return;
-            Editor.editingCampaign.tileData[cellPos].landmassTileID = Guid.Empty;
+            Editor.editingCampaign.EnsureTemplateTile(cellPos).landmassTileID = Guid.Empty;
             Editor.tilemapManager.UpdateTile(cellPos);
         }
 
@@ -215,12 +215,12 @@ namespace Models.CampaignEditor
                 bottomLeftXField != null ? bottomLeftXField.value : -50,
                 bottomLeftYField != null ? bottomLeftYField.value : -50
             );
-            var topRight = new Vector2Int(
+            var inclusiveTopRight = new Vector2Int(
                 topRightXField != null ? topRightXField.value : 49,
                 topRightYField != null ? topRightYField.value : 49
             );
 
-            Editor.SetCampaignMissionCorners(bottomLeft, topRight);
+            Editor.editingCampaign?.SetMissionCorners(bottomLeft, inclusiveTopRight);
             RefreshMapSizeUI();
         }
 

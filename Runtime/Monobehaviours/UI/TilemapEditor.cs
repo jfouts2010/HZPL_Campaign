@@ -394,7 +394,7 @@ public class TilemapEditor : MonoBehaviour
 
     public Vector2Int GetCampaignSizeInTiles()
     {
-        if (editingCampaign == null || editingCampaign.tileData == null || editingCampaign.tileData.Count == 0)
+        if (editingCampaign == null || editingCampaign.templateTiles == null || editingCampaign.templateTiles.Count == 0)
             return new Vector2Int(0, 0);
 
         int minX = int.MaxValue;
@@ -402,7 +402,7 @@ public class TilemapEditor : MonoBehaviour
         int minY = int.MaxValue;
         int maxY = int.MinValue;
 
-        foreach (var cell in editingCampaign.tileData.Keys)
+        foreach (var cell in editingCampaign.TileCells)
         {
             if (cell.x < minX) minX = cell.x;
             if (cell.x > maxX) maxX = cell.x;
@@ -423,16 +423,17 @@ public class TilemapEditor : MonoBehaviour
         }
 
         bottomLeft = editingCampaign.BottomLeftCorner;
-        topRight = editingCampaign.TopRightCorner;
+        topRight = editingCampaign.TryGetInclusiveTopRightCorner(out var inclusiveTopRight)
+            ? inclusiveTopRight
+            : editingCampaign.TopRightCorner;
     }
 
-    public void SetCampaignMissionCorners(Vector2Int bottomLeft, Vector2Int topRight)
+    public void SetCampaignMissionCorners(Vector2Int bottomLeft, Vector2Int inclusiveTopRight)
     {
         if (editingCampaign == null)
             return;
 
-        editingCampaign.BottomLeftCorner = bottomLeft;
-        editingCampaign.TopRightCorner = topRight;
+        editingCampaign.SetMissionCorners(bottomLeft, inclusiveTopRight);
     }
 
     public void ResizeCampaignTileArea(int width, int height)
@@ -443,8 +444,10 @@ public class TilemapEditor : MonoBehaviour
         if (editingCampaign == null)
             return;
 
-        var oldTileData = editingCampaign.tileData ?? new Dictionary<Vector3Int, HZPLTileData>();
-        var resized = new Dictionary<Vector3Int, HZPLTileData>(width * height);
+        var oldTemplateTiles = editingCampaign.templateTiles ?? new Dictionary<Vector3Int, TemplateTileData>();
+        var oldStartingTiles = editingCampaign.startingTiles ?? new Dictionary<Vector3Int, StartingTileData>();
+        var resizedTemplateTiles = new Dictionary<Vector3Int, TemplateTileData>(width * height);
+        var resizedStartingTiles = new Dictionary<Vector3Int, StartingTileData>(width * height);
 
         int minX = -(width / 2);
         int minY = -(height / 2);
@@ -454,14 +457,17 @@ public class TilemapEditor : MonoBehaviour
             for (int y = minY; y < minY + height; y++)
             {
                 var cell = new Vector3Int(x, y, 0);
-                if (!oldTileData.TryGetValue(cell, out var tile))
-                    tile = new HZPLTileData();
-
-                resized[cell] = tile;
+                resizedTemplateTiles[cell] = oldTemplateTiles.TryGetValue(cell, out var templateTile)
+                    ? templateTile
+                    : new TemplateTileData();
+                resizedStartingTiles[cell] = oldStartingTiles.TryGetValue(cell, out var startingTile)
+                    ? startingTile
+                    : new StartingTileData();
             }
         }
 
-        editingCampaign.tileData = resized;
+        editingCampaign.templateTiles = resizedTemplateTiles;
+        editingCampaign.startingTiles = resizedStartingTiles;
         SetCampaign();
     }
 
@@ -510,14 +516,14 @@ public class TilemapEditor : MonoBehaviour
         if (editingCampaign == null)
             return;
         
-        tilemapManager.SetCampaign(editingCampaign.tileData, editingCampaign.areas, editingCampaign.Airports);
+        tilemapManager.SetCampaign(editingCampaign.BuildGameplayTileView(), editingCampaign.areas, editingCampaign.Airports);
         divisionManager?.Rebuild(editingCampaign);
         foreach (var EM in editorModes)
         {
             EM.SetCampaign();
         }
 
-        workAreaOutline?.Rebuild(editingCampaign.tileData.Keys);
+        workAreaOutline?.Rebuild(editingCampaign.TileCells);
         RefreshActiveModuleLabel();
     }
 
@@ -674,7 +680,7 @@ public class TilemapEditor : MonoBehaviour
         topLeft = Vector3.zero;
         topRight = Vector3.zero;
 
-        if (editingCampaign == null || editingCampaign.tileData == null || editingCampaign.tileData.Count == 0)
+        if (editingCampaign == null || editingCampaign.templateTiles == null || editingCampaign.templateTiles.Count == 0)
             return false;
 
         int minX = int.MaxValue;
@@ -682,7 +688,7 @@ public class TilemapEditor : MonoBehaviour
         int minY = int.MaxValue;
         int maxY = int.MinValue;
 
-        foreach (var cell in editingCampaign.tileData.Keys)
+        foreach (var cell in editingCampaign.TileCells)
         {
             if (cell.x < minX) minX = cell.x;
             if (cell.x > maxX) maxX = cell.x;

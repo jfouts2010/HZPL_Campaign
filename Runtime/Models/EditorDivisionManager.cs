@@ -113,13 +113,13 @@ namespace Models.Gameplay
             if (_editor == null || _editor.tilemapManager == null || _landUnitPrefab == null)
                 return;
 
-            var tileData = _editor.editingCampaign?.tileData;
-            if (tileData == null)
+            var campaign = _editor.editingCampaign;
+            if (campaign == null)
                 return;
 
             foreach (var divisionsOnTile in _allDivisions.GroupBy(division => division.Position))
             {
-                if (!tileData.TryGetValue(divisionsOnTile.Key, out var cellData) || !cellData.LandTile)
+                if (!campaign.TryGetTemplateTile(divisionsOnTile.Key, out var cellData) || !cellData.LandTile)
                     continue;
 
                 var sprite = UnityEngine.Object.Instantiate(_landUnitPrefab, _editor.tilemapManager.transform);

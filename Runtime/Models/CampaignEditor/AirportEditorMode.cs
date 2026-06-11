@@ -434,7 +434,7 @@ namespace Models.CampaignEditor
 
         private bool IsValidTile(Vector3Int cellPos)
         {
-            return campaign?.tileData != null && campaign.tileData.ContainsKey(cellPos);
+            return campaign != null && campaign.HasTile(cellPos);
         }
 
         private bool IsOccupiedByOtherAirport(Vector3Int cellPos, Guid airportId)
@@ -451,9 +451,9 @@ namespace Models.CampaignEditor
             if (IsValidTile(_editor.lastPaintedCell) && !IsOccupiedByOtherAirport(_editor.lastPaintedCell, airportId))
                 return _editor.lastPaintedCell;
 
-            if (campaign?.tileData != null)
+            if (campaign != null)
             {
-                foreach (var tile in campaign.tileData.Keys.OrderBy(tile => tile.x).ThenBy(tile => tile.y))
+                foreach (var tile in campaign.TileCells.OrderBy(tile => tile.x).ThenBy(tile => tile.y))
                 {
                     if (!IsOccupiedByOtherAirport(tile, airportId))
                         return tile;
@@ -465,8 +465,8 @@ namespace Models.CampaignEditor
 
         private Alliance GetAllianceForCell(Vector3Int cellPos)
         {
-            if (campaign?.tileData != null && campaign.tileData.TryGetValue(cellPos, out var tileData) && tileData != null)
-                return tileData.controllingAlliance;
+            if (campaign != null && campaign.TryGetStartingTile(cellPos, out var tileData))
+                return tileData.startingAlliance;
 
             return Alliance.Neutral;
         }
