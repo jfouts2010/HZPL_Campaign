@@ -188,7 +188,7 @@ namespace Models.CampaignEditor
                 var infoLabel = element.ElementAt(1) as Label;
 
                 nameLabel.text = airport.Name;
-                infoLabel.text = $"{airport.OwnerAlliance} @ {FormatTile(airport.Tile)} | Level {airport.Level}";
+                infoLabel.text = $"{airport.OwnerAlliance} @ {FormatTile(airport.Tile)} | Build Level {airport.BuildLevel}";
             };
 
             airportsListView.selectionChanged += OnAirportSelectionChanged;
@@ -255,7 +255,7 @@ namespace Models.CampaignEditor
 
             selectedAirportLabel.text = $"Selected: {selectedAirport.Name} ({selectedAirport.OwnerAlliance})";
             selectedAirportSummaryLabel.text =
-                $"Tile: {FormatTile(selectedAirport.Tile)} | Airport Level: {selectedAirport.Level}";
+                $"Tile: {FormatTile(selectedAirport.Tile)} | Build Level: {selectedAirport.BuildLevel}";
             placementHintLabel.text =
                 "Click an empty tile to move the selected airport. Right click the selected tile to clear the selection.";
         }
@@ -292,7 +292,7 @@ namespace Models.CampaignEditor
                 Tile = initialTile,
                 OwnerAlliance = GetAllianceForCell(initialTile),
                 Name = "New Airport",
-                Level = 1
+                BuildLevel = 1
             };
 
             OpenEditorPopup(CloneAirport(airport));
@@ -346,7 +346,7 @@ namespace Models.CampaignEditor
             editorTitle.text = isEditingExisting ? "Edit Airport" : "Create Airport";
             airportNameField.value = airport.Name ?? string.Empty;
             ownerAllianceDropdown.value = airport.OwnerAlliance.ToString();
-            airportLevelSlider.value = Mathf.Clamp(airport.Level, 1, 10);
+            airportLevelSlider.value = Mathf.Clamp(airport.BuildLevel, 1, 10);
             tileLabel.text = FormatTile(airport.Tile);
 
             UpdateLevelLabel(airportLevelSlider.value);
@@ -383,7 +383,7 @@ namespace Models.CampaignEditor
                 ? "Unnamed Airport"
                 : airportNameField.value.Trim();
             editedAirport.OwnerAlliance = ParseAlliance(ownerAllianceDropdown.value);
-            editedAirport.Level = Mathf.Clamp(airportLevelSlider.value, 1, 10);
+            editedAirport.BuildLevel = Mathf.Clamp(airportLevelSlider.value, 1, 10);
             editedAirport.Tile = GetAvailablePlacementCell(editedAirport.Id, editedAirport.Tile);
 
             if (isEditingExisting)
@@ -423,7 +423,7 @@ namespace Models.CampaignEditor
                 Name = airport.Name,
                 Tile = airport.Tile,
                 OwnerAlliance = airport.OwnerAlliance,
-                Level = airport.Level
+                BuildLevel = airport.BuildLevel
             };
         }
 

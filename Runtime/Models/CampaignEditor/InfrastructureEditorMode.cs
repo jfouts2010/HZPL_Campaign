@@ -93,13 +93,13 @@ namespace Models.CampaignEditor
             supplyHubToggle.RegisterValueChangedCallback(evt => OnSupplyHubChanged(evt.newValue));
             supplyLineLevelSlider.RegisterValueChangedCallback(evt => OnSupplyLineLevelChanged(evt.newValue));
             
-            fortificationSlider.RegisterValueChangedCallback(evt => OnBuildingLevelChanged(BuildingType.Fortification, evt.newValue));
-            portSlider.RegisterValueChangedCallback(evt => OnBuildingLevelChanged(BuildingType.Port, evt.newValue));
+            fortificationSlider.RegisterValueChangedCallback(evt => currentInfrastructure.fortification.buildLevel = evt.newValue);
+            portSlider.RegisterValueChangedCallback(evt => currentInfrastructure.port.buildLevel = evt.newValue);
             
-            oilSlider.RegisterValueChangedCallback(evt => OnResourceLevelChanged(ResourceType.Oil, evt.newValue));
-            electricitySlider.RegisterValueChangedCallback(evt => OnResourceLevelChanged(ResourceType.Electricity, evt.newValue));
-            steelSlider.RegisterValueChangedCallback(evt => OnResourceLevelChanged(ResourceType.Steel, evt.newValue));
-            factorySlider.RegisterValueChangedCallback(evt => OnResourceLevelChanged(ResourceType.Factory, evt.newValue));
+            oilSlider.RegisterValueChangedCallback(evt => currentInfrastructure.oil.buildLevel = evt.newValue);
+            electricitySlider.RegisterValueChangedCallback(evt => currentInfrastructure.electricity.buildLevel = evt.newValue);
+            steelSlider.RegisterValueChangedCallback(evt => currentInfrastructure.steel.buildLevel = evt.newValue);
+            factorySlider.RegisterValueChangedCallback(evt => currentInfrastructure.factory.buildLevel = evt.newValue);
             
             clearAllBtn.clicked += OnClearAllClicked;
         }
@@ -189,23 +189,23 @@ namespace Models.CampaignEditor
             cityTypeRadioGroup.value = (int)currentInfrastructure.cityType;
             
             // Infrastructure level
-            infrastructureLevelSlider.SetValueWithoutNotify(currentInfrastructure.infrastructureLevel);
-            UpdateInfrastructureLevelDescription(currentInfrastructure.infrastructureLevel);
+            infrastructureLevelSlider.SetValueWithoutNotify(currentInfrastructure.roads.buildLevel);
+            UpdateInfrastructureLevelDescription(currentInfrastructure.roads.buildLevel);
             
             // Supply
             supplyHubToggle.SetValueWithoutNotify(currentInfrastructure.isSupplyHub);
-            supplyLineLevelSlider.SetValueWithoutNotify(currentInfrastructure.supplyLineLevel);
-            UpdateSupplyLineLevelDescription(currentInfrastructure.supplyLineLevel);
+            supplyLineLevelSlider.SetValueWithoutNotify(currentInfrastructure.supplyLine.buildLevel);
+            UpdateSupplyLineLevelDescription(currentInfrastructure.supplyLine.buildLevel);
             
             // Buildings
-            fortificationSlider.SetValueWithoutNotify(currentInfrastructure.fortificationLevel);
-            portSlider.SetValueWithoutNotify(currentInfrastructure.portLevel);
+            fortificationSlider.SetValueWithoutNotify(currentInfrastructure.fortification.buildLevel);
+            portSlider.SetValueWithoutNotify(currentInfrastructure.port.buildLevel);
             
             // Resources
-            oilSlider.SetValueWithoutNotify(currentInfrastructure.oilLevel);
-            electricitySlider.SetValueWithoutNotify(currentInfrastructure.electricityLevel);
-            steelSlider.SetValueWithoutNotify(currentInfrastructure.steelLevel);
-            factorySlider.SetValueWithoutNotify(currentInfrastructure.factoryLevel);
+            oilSlider.SetValueWithoutNotify(currentInfrastructure.oil.buildLevel);
+            electricitySlider.SetValueWithoutNotify(currentInfrastructure.electricity.buildLevel);
+            steelSlider.SetValueWithoutNotify(currentInfrastructure.steel.buildLevel);
+            factorySlider.SetValueWithoutNotify(currentInfrastructure.factory.buildLevel);
 
             if (currentTile.HasValue)
             {
@@ -258,7 +258,7 @@ namespace Models.CampaignEditor
             }
             
             selectedTileLabel.text = $"Editing Tile: {currentTile.Value}";
-            clearAllBtn.SetEnabled(currentInfrastructure.HasAnyInfrastructure());
+            clearAllBtn.SetEnabled(currentInfrastructure.HasAnyBuiltInfrastructure());
             
             // Build info summary
             var info = new List<string>();
@@ -268,9 +268,9 @@ namespace Models.CampaignEditor
                 info.Add($"<b>City:</b> {currentInfrastructure.cityType}");
             }
             
-            if (currentInfrastructure.infrastructureLevel > 0)
+            if (currentInfrastructure.roads.buildLevel > 0)
             {
-                info.Add($"<b>Roads:</b> Level {currentInfrastructure.infrastructureLevel} ({currentInfrastructure.GetInfrastructureLevelDescription()})");
+                info.Add($"<b>Roads:</b> Level {currentInfrastructure.roads.buildLevel}");
             }
             
             // Supply info
@@ -279,9 +279,9 @@ namespace Models.CampaignEditor
             {
                 supplyInfo.Add("Supply Hub");
             }
-            if (currentInfrastructure.supplyLineLevel > 0)
+            if (currentInfrastructure.supplyLine.buildLevel > 0)
             {
-                supplyInfo.Add($"Supply Line Lvl {currentInfrastructure.supplyLineLevel}");
+                supplyInfo.Add($"Supply Line Lvl {currentInfrastructure.supplyLine.buildLevel}");
             }
             if (supplyInfo.Count > 0)
             {
@@ -289,10 +289,10 @@ namespace Models.CampaignEditor
             }
             
             var buildings = new List<string>();
-            if (currentInfrastructure.fortificationLevel > 0)
-                buildings.Add($"Fortification Lvl {currentInfrastructure.fortificationLevel}");
-            if (currentInfrastructure.portLevel > 0)
-                buildings.Add($"Port Lvl {currentInfrastructure.portLevel}");
+            if (currentInfrastructure.fortification.buildLevel > 0)
+                buildings.Add($"Fortification Lvl {currentInfrastructure.fortification.buildLevel}");
+            if (currentInfrastructure.port.buildLevel > 0)
+                buildings.Add($"Port Lvl {currentInfrastructure.port.buildLevel}");
             
             if (buildings.Count > 0)
             {
@@ -300,14 +300,14 @@ namespace Models.CampaignEditor
             }
             
             var resources = new List<string>();
-            if (currentInfrastructure.oilLevel > 0)
-                resources.Add($"Oil Lvl {currentInfrastructure.oilLevel}");
-            if (currentInfrastructure.electricityLevel > 0)
-                resources.Add($"Electricity Lvl {currentInfrastructure.electricityLevel}");
-            if (currentInfrastructure.steelLevel > 0)
-                resources.Add($"Steel Lvl {currentInfrastructure.steelLevel}");
-            if (currentInfrastructure.factoryLevel > 0)
-                resources.Add($"Factory Lvl {currentInfrastructure.factoryLevel}");
+            if (currentInfrastructure.oil.buildLevel > 0)
+                resources.Add($"Oil Lvl {currentInfrastructure.oil.buildLevel}");
+            if (currentInfrastructure.electricity.buildLevel > 0)
+                resources.Add($"Electricity Lvl {currentInfrastructure.electricity.buildLevel}");
+            if (currentInfrastructure.steel.buildLevel > 0)
+                resources.Add($"Steel Lvl {currentInfrastructure.steel.buildLevel}");
+            if (currentInfrastructure.factory.buildLevel > 0)
+                resources.Add($"Factory Lvl {currentInfrastructure.factory.buildLevel}");
             
             if (resources.Count > 0)
             {
@@ -352,7 +352,9 @@ private void OnCityTypeChanged(int value)
         {
             if (currentInfrastructure == null) return;
             
-            currentInfrastructure.infrastructureLevel = Mathf.Clamp(level, 0, 10);
+            var roads = currentInfrastructure.roads;
+            roads.SetBuildLevel(level);
+            currentInfrastructure.roads = roads;
             UpdateInfrastructureLevelDescription(level);
             UpdateDisplay();
             OnDataChanged();
@@ -373,33 +375,14 @@ private void OnCityTypeChanged(int value)
         {
             if (currentInfrastructure == null) return;
             
-            currentInfrastructure.supplyLineLevel = Mathf.Clamp(level, 0, 10);
+            var supplyLine = currentInfrastructure.supplyLine;
+            supplyLine.SetBuildLevel(level);
+            currentInfrastructure.supplyLine = supplyLine;
             UpdateSupplyLineLevelDescription(level);
             UpdateDisplay();
             OnDataChanged();
             Debug.Log($"Set supply line level to {level} at {currentTile}");
         }
-
-        private void OnBuildingLevelChanged(BuildingType type, int level)
-        {
-            if (currentInfrastructure == null) return;
-            
-            currentInfrastructure.SetBuildingLevel(type, level);
-            UpdateDisplay();
-            OnDataChanged();
-            Debug.Log($"Set {type} level to {level} at {currentTile}");
-        }
-
-        private void OnResourceLevelChanged(ResourceType type, int level)
-        {
-            if (currentInfrastructure == null) return;
-            
-            currentInfrastructure.SetResourceLevel(type, level);
-            UpdateDisplay();
-            OnDataChanged();
-            Debug.Log($"Set {type} level to {level} at {currentTile}");
-        }
-
         private void OnClearAllClicked()
         {
             if (currentInfrastructure == null || currentTile == null) return;

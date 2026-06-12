@@ -57,7 +57,7 @@ namespace Models.CampaignEditor
 
         private void GenerateBoundaryOutput()
         {
-            if (Editor?.editingCampaign == null || Editor.editingCampaign.TileCount == 0)
+            if (Editor?.editingCampaign == null || !Editor.editingCampaign.TileCells.Any())
             {
                 SetOutput("No CampaignTemplate tile data.");
                 return;
